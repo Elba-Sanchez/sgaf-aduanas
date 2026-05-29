@@ -1,6 +1,6 @@
 /*
 Esto es solo una prueba, borra esto y pondremos el código que nos dio la otra vez :p
-Es un 'hola mundo'
+Es un 'hola mundo'.
 */
 import React, { useState } from 'react';
 import { Terminal, CheckCircle2 } from 'lucide-react';
