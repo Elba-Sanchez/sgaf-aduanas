@@ -16,7 +16,7 @@ Este repositorio contiene el prototipo web desarrollado con React + Vite como ap
 # Instalación
 
 ## Clonar repo
--git clone <https://github.com/Elba-Sanchez/sgaf-aduanas.git>
+- git clone <https://github.com/Elba-Sanchez/sgaf-aduanas.git>
 
 ## Ingresar al proyecto
 - cd sgaf-aduanas
@@ -73,6 +73,8 @@ En algunos computadores es necesario instalar las dependencias utilizando 'npm' 
 - pnpm / npm
 
 # Estructura del Proyecto
+
+```text
 ├── public/
 │   ├── favicon.svg
 │   └── icons.svg
@@ -82,6 +84,7 @@ En algunos computadores es necesario instalar las dependencias utilizando 'npm' 
     ├── App.css
     ├── main.jsx
     └── index.css
+```
 
 # Relación con el proyecto Académico
 
@@ -96,27 +99,3 @@ El sistema considera la integración con organismos como:
 
 - Elba Sánchez / elb.sanchezs@duocuc.cl
 - Ignacia Padilla / svt.nova@pm.me
-
-
-
-
-
-
-
-
-# React + Vite
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
