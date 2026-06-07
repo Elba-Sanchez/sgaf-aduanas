@@ -1,13 +1,13 @@
 # SGAF - Sistema de Gestión Aduanera Fronteriza
 
-## Descripción
+### Descripción
 SGAF (Sistema de gestión Aduanera Fronteriza) o AduanApp, es una propuesta de sistema desarrollada para modernizar y optimizar los procesos de control fronterizo del Servicio Nacional de Aduanas de Chile.
 
 Este proyecto busca digitalizar y automatizar procesos, actualmente manuales, permitiendo una gestión de estos mismos procesos más eficientes, de esta forma, reduciendo los tiempos de espera y mejorando la experiencia de los pasajeros y funcionarios.
 
 Este repositorio contiene el prototipo web desarrollado con React + Vite como apoyo al levantamiento de requisitos y válidación de la interfaz del usuario.
 
-## Objetivos
+### Objetivos
 - Digitalizar procesos aduaneros.
 - Reducir tiempos de espera en el paso fronterizo.
 - Mejorar la coordinación entre los organismos involucrados.
@@ -15,13 +15,13 @@ Este repositorio contiene el prototipo web desarrollado con React + Vite como ap
 
 # Instalación
 
-## Clonar repo
+### Clonar repo
 - git clone <https://github.com/Elba-Sanchez/sgaf-aduanas.git>
 
-## Ingresar al proyecto
+### Ingresar al proyecto
 - cd sgaf-aduanas
 
-## Instalación de depedencias
+### Instalación de depedencias
 - pnpm install
 
 En algunos computadores es necesario instalar las dependencias utilizando 'npm' y asegurarse de qu Vite esté disponible antes de ejecutar el proyecto
@@ -30,10 +30,10 @@ En algunos computadores es necesario instalar las dependencias utilizando 'npm' 
 - npx vite
 - pnpm dev
 
-## Compilación para producción
+### Compilación para producción
 - pnpm build
 
-## Vista previa de producción
+### Vista previa de producción
 - pnpm preview
 
 # Funcionalidades consideradas
@@ -43,32 +43,32 @@ En algunos computadores es necesario instalar las dependencias utilizando 'npm' 
 - Inicio de sesión.
 - Administración de perfiles y roles.
 
-## Gestión de Documentos
+### Gestión de Documentos
 - Validación de autorizaciones de menores.
 - Gestión documental asociada a trámites aduaneros.
 
-## Gestión Vehicular
+### Gestión Vehicular
 - Registro de ingreso y salida de vehículos.
 - Control de admisión temporal.
 
-## Declaración SAG
+### Declaración SAG
 - Registro digital de declaraciones.
 - Validación de información ingresada.
 
-## Reportes
+### Reportes
 - Generación de reportes estadísticos.
 - Exportación de información.
 
 # Tecnologías Utilizadas
 
-## Frontend
+### Frontend
 - React 19
 - Vite
 - JavaScript(ES6+)
 - CSS
 - Lucide React
 
-## Herramientas de Desarrollo
+### Herramientas de Desarrollo
 - ESLint
 - pnpm / npm
 
