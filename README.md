@@ -38,7 +38,7 @@ En algunos computadores es necesario instalar las dependencias utilizando 'npm' 
 
 # Funcionalidades consideradas
 
-## Gestión de Usuarios
+### Gestión de Usuarios
 - Registro de usuarios (Funcionario, Administrador, Pasajero).
 - Inicio de sesión.
 - Administración de perfiles y roles.
