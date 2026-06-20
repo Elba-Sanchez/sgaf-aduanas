@@ -152,8 +152,8 @@ const CSS = `
 
 function Toast({ msg, type, onClose }) {
   useEffect(() => { const t = setTimeout(onClose, 4000); return () => clearTimeout(t); }, []);
-  const bg = { succes: C.successBg, error: CdangerBg, info: C.infoBg, warning: C.warningBg };
-  const co = { succes: C.successBg, error: CdangerBg, info: C.infoBg, warning: C.warningBg };
+  const bg = { success: C.successBg, error: C.dangerBg, info: C.infoBg, warning: C.warningBg };
+  const co = { success: C.success,   error: C.danger,   info: C.info,   warning: C.warning };
   return (
     <div style={{
       position: "fixed", top: 20, right: 20, zIndex: 999, background: bg[type] || C.infoBg, color: co[type] || C.info,
@@ -166,7 +166,7 @@ function Toast({ msg, type, onClose }) {
   );
 }
 
-function StateCard({ label, value, sub, color }) {
+function StatCard({ label, value, sub, color }) {
   return (
     <div className="card" style={{ textAling: "center" }}>
       <div style={{ fontSize: 26, fontWeight: 600, color: color || C.navy }}>{value}</div>
@@ -324,49 +324,47 @@ function AppShell({ user, currentView, onNav, onLogout, children }) {
 // VISTA: PASAJERO HOME
 function PasajeroHome({ user, onNav }) {
   const tramites = [
-    { id: "sag", icon: "🌿", title: "Declaración SAG", desc: "Declara producos vegetales, animales o mascotas", badge: "Obligatorio", 
-      bc: "b-green" },
-    { id: "menores", icon: "👶", title: "Autorización de menor(es)", desc: "Sube el permiso notarial para menores de edad", badge: "Si aplica", 
-      bc: "b_blue" },
-    { id: "vehiculo_salida", icon: "🚗", title: "Salida de Vehículo", desc: "Genera el formulario de admisión temporal", badge: "Si aplica", 
-      bc: "b-yellow" },
+    { id:"sag", icon:"🌿", title:"Declaración SAG", desc:"Declara productos vegetales, animales o mascotas", badge:"Obligatorio", bc:"b-green" },
+    { id:"menores", icon:"👶", title:"Autorización Menores", desc:"Sube el permiso notarial para menores de edad", badge:"Si aplica", bc:"b-blue" },
+    { id:"vehiculo_salida", icon:"🚗", title:"Salida de Vehículo", desc:"Genera el formulario de admisión temporal", badge:"Si aplica", bc:"b-yellow" },
   ];
   return (
     <div className="fade">
-      <div style={{ marginBottom: 24 }}>
-        <div className="Stitle">Bienvenido/a, {user.name.split("")[0]}</div>
-        <div className="ssub">Completa tus trámites antes de llegar al paso fronterizo Los Libertadores</div>
+      <div style={{ marginBottom:24 }}>
+        <div className="stitle">Bienvenido/a, {user.name.split(" ")[0]} 👋</div>
+        <div className="ssub">Completa tus trámites antes de llegar 
+		al paso fronterizo Los Libertadores</div>
       </div>
-      <div style={{ background: C.navy, borderRadius: 12, padding: 20, marginBottom: 24, color: "#fff" }}>
-        <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>Aviso importante</div>
-        <div style={{ fontSize: 13, opacity: 0.9 }}>Completa tu declaración SAG con anticipación. Tiempo promedio de cruce hoy: 
-          <strong>25 minutos</strong> (normal).</div>
-        <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <span className="badge" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}> Sistema operativo</span>
-          <span className="badge" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}> Mayor afluencia: 09:30 - 18:00</span>
+      <div style={{ background:C.navy,borderRadius:12,padding:20,marginBottom:24,color:"#fff" }}>
+        <div style={{ fontSize:15,fontWeight:600,marginBottom:6 }}>📢 Aviso importante</div>
+        <div style={{ fontSize:13,opacity:0.9 }}>Completa tu declaración SAG con anticipación. Tiempo promedio de cruce hoy: <strong>12 minutos</strong> (normal).</div>
+        <div style={{ marginTop:10,display:"flex",gap:8,flexWrap:"wrap" }}>
+          <span className="badge" style={{ background:"rgba(255,255,255,0.2)",color:"#fff" }}>🟢 Sistema operativo</span>
+          <span className="badge" style={{ background:"rgba(255,255,255,0.2)",color:"#fff" }}>⏱️ Mayor afluencia: 09:30 - 18:00</span>
         </div>
       </div>
-      <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 14 }}>Tus trámites disponibles</div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 14 }}>
+      <div style={{ fontSize:15,fontWeight:600,marginBottom:14 }}>Tus trámites disponibles</div>
+      <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:14 }}>
         {tramites.map(t => (
-          <div key={t.id} className="card" style={{ cursor: "pointer", transition: "box-shadow 0.2s" }} onClick={() => onNav(t.id)}
-            onMouseEnter={e => e.currentTarget.style.boxShadow = "0 4px 16px rgba(27,58,107,0.12)"}
-            onMouseLeave={e => e.currentTarget.style.boxShadow = ""}>
-            <div style={{ fontSize: 28, marginBottom: 10 }}>{t.icon}</div>
-            <span className={`badge ${t.bc}`} style={{ marginBottom: 8 }}>{t.badge}</span>
-            <div style={{ fontWeight: 600, marginBottom: 4 }}>{t.title}</div>
-            <div style={{ fontSize: 13, color: C.textSec }}>{t.desc}</div>
+          <div key={t.id} className="card" style={{ cursor:"pointer",transition:"box-shadow 0.2s" }} onClick={() => onNav(t.id)}
+               onMouseEnter={e => e.currentTarget.style.boxShadow="0 4px 16px rgba(27,58,107,0.12)"}
+               onMouseLeave={e => e.currentTarget.style.boxShadow=""}>
+            <div style={{ fontSize:28,marginBottom:10 }}>{t.icon}</div>
+            <span className={`badge ${t.bc}`} style={{ marginBottom:8 }}>{t.badge}</span>
+            <div style={{ fontWeight:600,marginBottom:4 }}>{t.title}</div>
+            <div style={{ fontSize:13,color:C.textSec }}>{t.desc}</div>
           </div>
         ))}
       </div>
-      <div className="card" style={{ marginTop: 20 }}>
-        <div style={{ fontWeight: 600, marginBottom: 4 }}> ¿Primera vez cruzando la frontera?</div>
-        <div style={{ fontSize: 13, color: C.textSec, marginBottom: 10 }}>Te guiamos paso a paso en cada trámite.</div>
+      <div className="card" style={{ marginTop:20 }}>
+        <div style={{ fontWeight:600,marginBottom:4 }}>❓ ¿Primera vez cruzando la frontera?</div>
+        <div style={{ fontSize:13,color:C.textSec,marginBottom:10 }}>Te guiamos paso a paso en cada trámite.</div>
         <button className="btn btn-sec btn-sm" onClick={() => onNav("ayuda")}>Ver guía completa →</button>
       </div>
     </div>
   );
 }
+
 // VISTA: DECLARACIÓN SAG
 function SagForm({ onToast }) {
   const [form, setForm] = useState({ frutas:false,carnes:false,lacteos:false,mascotas:false,semillas:false,otro:false,descripcion:"" });
@@ -376,7 +374,7 @@ function SagForm({ onToast }) {
   const handleEnviar = async () => {
     setEstado("loading");
     try {
-      const res = await mockApi.validarSAG();
+      const res = await mockApi.validarSag();
       setEstado(res);
       onToast(res.aprobado ? "Declaración aceptada." : "Requiere revisión presencial.", res.aprobado ? "success" : "warning");
     } catch (e) {
@@ -467,7 +465,7 @@ function MenoresForm({ onToast }) {
     try {
       const res = await mockApi.validarMenor();
       setEstado(res);
-    } catch (error) {
+    } catch (e) {
       setEstado({ error: e.message });
       onToast(e.message,"error");
     }
@@ -560,10 +558,349 @@ function MenoresForm({ onToast }) {
 }
 
 // VISTA: SALIDA VEHÍCULO
+function VehiculoSalida({ onToast }) {
+  const [form, setForm] = useState({ patente: "", marca: "", modelo: "",
+    anio:"", color:"", motor:"", chasis:"", propietario:"", rut:""});
+  const [patenteOk, setPatenteOk] = useState(null);
+  const [generado, setGenerado] = useState(false);
+  const f = (k,v) => setForm(p=>({...p,[k]:v}));
+
+  const validarPatente = (p) => {
+    const ok = /^[A-Z]{2}\d{4}$|^[A-Z]{4}\d{2}$/i.test(p.replace(/\s|-/g,""));
+    setPatenteOk(ok); 
+    return ok;
+  };
+
+  const handleGenerar = () => {
+    if (!validarPatente(form.patente)) { onToast("Formato de patente inválido (ej: BB-CC-12)", "Error"); return;}
+    if (!form.marca||!form.modelo||!form.propietario) { onToast("Completa todos los campos obligatorios.", "Error"); return; }
+    setGenerado(true); onToast("Documento generado exitosamente.", "success");
+  };
+
+  if (generado) {
+    const folio = Math.floor(100000+Math.random()*900000);
+    return (
+      <div className="fade">
+        <div className="card" style={{ maxWidth:600, margin:"0 auto"}}>
+          <div style={{ textAlign:"center", marginBottom:20}}>
+            <div style={{ fontSize:32, marginBottom:8}}> hola</div>
+            <div style={{ fontSize:16, fontWeight:600}}>Documento generado</div>
+            <div style={{ fontSize:13, color:C.textSec}}>Formulario de Salida y Admisión Temporal de Vehículos</div>
+          </div>
+          <div style={{ border:`2px solid ${C.navy}`, borderRadius:10, padding:20, marginBottom:16}}>
+            <div style={{ display:"flex", justifyContent:"space-between",alignItems:"center",marginBottom:12, paddingBottom:10, borderBottom:`1px solid ${C.border}`}}>
+              <div>
+                <div style={{ fontFamily:" 'Source Serif 4', serif", fontSize:15, fontWeight:600, color:C.navy }}>SERVICIO NACIONAL DE ADUANAS</div>
+                <div style={{ fontSize:12,color:C.textSec }}>Formulario: Salida y Adminisión temporal de vehículos</div>
+              </div>
+              <div style={{ fontSize:11,color:C.textMuted,textAlign:"right" }}>N° {folio}<br />Válido: 180 días</div>
+            </div>
+            <div className="g2" style={{ fontSize:13 }}>
+              <div><strong>Patente:</strong> {form.patente.toUpperCase()}</div>
+              <div><strong>Marca/Modelo:</strong> {form.marca} {form.modelo}</div>
+              <div><strong>Año:</strong> {form.anio}</div>
+              <div><strong>Color:</strong> {form.color}</div>
+              <div><strong>Propietario:</strong> {form.propietario}</div>
+              <div><strong>RUT:</strong> {form.rut}</div>
+            </div>
+            <div style={{ marginTop:12, fontSize:11, color:C.textMuted, display:"flex", justifyContent:"space-between" }}>
+              <div>COPIA ORIGINAL — Pare presentar en Aduanas Argentina</div>
+              <div>Fecha: {new Date().toLocaleDateString("es-CL")}</div>
+            </div>
+          </div>
+          <div style={{ display:"flex",gap:10}}>
+            <button className="btn btn-primary btn-sm"> Descargar PDF</button>
+            <button className="btn btn-sec btn-sm" onClick={() => setGenerado(false)}> Volver</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+ return (
+    <div className="fade">
+      <div className="stitle"> Formulario Salida de Vehículo</div>
+      <div className="ssub">Genera el documento "Salida y Admisión Temporal de Vehículos" para cruzar a Argentina</div>
+      <div className="card">
+        <div className="g2">
+          {[["patente","Patente *","AB1234"],["marca","Marca *","Toyota"],["modelo","Modelo *",
+		  "Corolla"],["anio","Año","2022"],["color","Color","Blanco"],["motor","N° Motor","123456789"],
+		  ["chasis","N° Chasis (VIN)","JT2BF22K000001"],["propietario","Propietario *","Nombre completo"],
+		  ["rut","RUT propietario *","12.345.678-9"]].map(([k,lbl,ph]) => (
+            <div key={k} className="fgroup">
+              <label className="flabel">{lbl}</label>
+              {k==="patente" ? (
+                <div style={{ position:"relative" }}>
+                  <input type="text" placeholder={ph} value={form[k]} onChange={e=>{f(k,e.target.value);setPatenteOk(null);}} 
+                  onBlur={()=>form.patente&&validarPatente(form.patente)} style={{ borderColor:patenteOk===false?C.danger:patenteOk===true?C.success:undefined }} />
+                  {patenteOk!==null&&<span style={{ position:"absolute",right:10,top:"50%",transform:"translateY(-50%)" }}>{patenteOk?"✅":"❌"}</span>}
+                </div>
+              ) : (
+                <input type="text" placeholder={ph} value={form[k]} onChange={e=>f(k,e.target.value)} />
+              )}
+            </div>
+          ))}
+        </div>
+        <button className="btn btn-primary" onClick={handleGenerar}> Generar documento PDF</button>
+      </div>
+    </div>
+  );
+}
+
 // VISTA: PANEL FUNCIONARIO
+function FuncionarioPanel({ user, onNav }) {
+  const alertas = [
+    { tipo:"SAG",pasajero:"Ana López",doc:"12.456.789-0",msg:"Declaró productos de origen animal",badge:"b-yellow",icon:"⚠️" },
+    { tipo:"PDI",pasajero:"Carlos Méndez",doc:"Pasaporte ARG-X4521",msg:"Consulta de antecedentes pendiente",badge:"b-blue",icon:"🔍" },
+  ];
+  return (
+    <div className="fade">
+      <div className="stitle">🖥️ Panel de Control — Funcionario</div>
+      <div className="ssub">Bienvenido/a, {user.name}. Ventanilla 3 — Activa</div>
+      <div className="g4" style={{ marginBottom:20 }}>
+        <StatCard label="Atenciones hoy" value="47" sub="↑ 12% vs ayer" color={C.navy} />
+        <StatCard label="Declaraciones SAG" value="23" sub="5 con productos" color={C.success} />
+        <StatCard label="Vehículos ingresados" value="18" sub="3 argentinos" color={C.warning} />
+        <StatCard label="Alertas activas" value="2" sub="Requieren atención" color={C.danger} />
+      </div>
+      <div style={{ fontWeight:600,marginBottom:12 }}>Alertas activas</div>
+      {alertas.map((a,i) => (
+        <div key={i} className="card" style={{ marginBottom:10,borderLeft:`4px solid ${a.tipo==="SAG"?C.warning:C.info}`,
+        display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,borderRadius:"0 12px 12px 0" }}>
+          <div style={{ display:"flex",alignItems:"center",gap:12 }}>
+            <span style={{ fontSize:20 }}>{a.icon}</span>
+            <div>
+              <div style={{ fontSize:14,fontWeight:500 }}>{a.pasajero} <span style={{ color:C.textMuted,fontWeight:400 }}>— {a.doc}</span></div>
+              <div style={{ fontSize:13,color:C.textSec }}>{a.msg}</div>
+            </div>
+          </div>
+          <div style={{ display:"flex",gap:8,flexShrink:0 }}>
+            <span className={`badge ${a.badge}`}>{a.tipo}</span>
+            <button className="btn btn-sec btn-sm">Ver detalles</button>
+          </div>
+        </div>
+      ))}
+      <div style={{ display:"flex",gap:12,marginTop:20 }}>
+        <button className="btn btn-primary btn-sm" onClick={()=>onNav("vehiculo_ingreso")}>🚙 Registrar Ingreso Vehículo</button>
+        <button className="btn btn-sec btn-sm" onClick={()=>onNav("pdi")}>🔍 Consulta PDI</button>
+      </div>
+    </div>
+  );
+}
+
 // VISTA: CONTROL PDI
+function PDIControl({ onToast }) {
+  const [rut, setRut] = useState("");
+  const [estado, setEstado] = useState(null);
+
+  const handleConsultar = async () => {
+    if (!rut) { onToast("Ingresa el RUT o número de documento.","error"); return; }
+    setEstado("loading");
+    try {
+      const res = await mockApi.consultarPDI(rut.replace(/\s/g,""));
+      setEstado(res);
+      if (res.alerta) onToast("⛔ ALERTA PDI: Revisar registro.","error");
+      else onToast("Consulta PDI completada sin alertas.","success");
+    } catch(e) {
+      setEstado({ error:e.message });
+      onToast(e.message,"error");
+    }
+  };
+
+  return (
+    <div className="fade">
+      <div className="stitle">🔍 Control PDI</div>
+      <div className="ssub">Consulta de antecedentes en la base de datos de la Policía de Investigaciones</div>
+      <div className="card" style={{ maxWidth:560 }}>
+        <div className="fgroup">
+          <label className="flabel">RUT / Número de pasaporte</label>
+          <div style={{ display:"flex",gap:10 }}>
+            <input type="text" placeholder="ej. 12345678-9 o Pasaporte ARG-X9821" value={rut} onChange={e=>setRut(e.target.value)} 
+            onKeyDown={e=>e.key==="Enter"&&handleConsultar()} />
+            <button className="btn btn-primary" onClick={handleConsultar} disabled={estado==="loading"} style={{ flexShrink:0 }}>
+              {estado==="loading"?"⏳...":"🔍 Consultar"}
+            </button>
+          </div>
+        </div>
+        {estado==="loading" && <div className="pulse" style={{ color:C.textSec,fontSize:13 }}>🔗 Conectando con nodo PDI Central...</div>}
+        {estado?.nombre && (
+          <div className="fade">
+            <div style={{ background:estado.alerta?C.dangerBg:C.successBg,border:`1px solid ${estado.alerta?C.danger:C.success}40`
+            ,borderRadius:10,padding:16 }}>
+              <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:10 }}>
+                <span className={`semaforo ${estado.alerta?"s-rojo":"s-verde"}`} />
+                <strong style={{ color:estado.alerta?C.danger:C.success }}>
+                  {estado.alerta ? "ALERTA ACTIVA" : "Sin alertas"}
+                </strong>
+              </div>
+              <div className="g2" style={{ fontSize:13 }}>
+                <div><strong>Nombre:</strong> {estado.nombre}</div>
+                <div><strong>Estado:</strong> <span className={`badge ${estado.habilitado?"b-green":"b-red"}`}>
+                  {estado.habilitado?"Habilitado para cruce":"NO habilitado"}</span></div>
+              </div>
+              {estado.mensaje && <div style={{ marginTop:10,fontSize:13,color:estado.alerta?C.danger:C.success,fontWeight:500 }}>{estado.mensaje}</div>}
+            </div>
+          </div>
+        )}
+        {estado?.error && <div style={{ background:C.dangerBg,color:C.danger,padding:"10px 14px",
+          borderRadius:8,fontSize:13,marginTop:10 }}>⚠️ {estado.error}</div>}
+      </div>
+    </div>
+  );
+}
+
 // VISTA: INGRESO VEHÍCULOS (Funcionario)
+function VehiculoIngreso({ onToast }) {
+  const [folio, setFolio] = useState("");
+  const [estado, setEstado] = useState(null);
+
+  const handleScan = async () => {
+    if (!folio) { onToast("Ingresa el folio o escanea el código.","error"); return; }
+    setEstado("loading");
+    try {
+      const res = await mockApi.consultarAduanaArg();
+      const fechaLimite = new Date(); fechaLimite.setDate(fechaLimite.getDate()+180);
+      setEstado({ ok:true, ...res, patente:"ARG-"+folio.slice(-4).toUpperCase(), pais:"Argentina", 
+        fechaLimite:fechaLimite.toLocaleDateString("es-CL") });
+      onToast("Vehículo validado. Ingreso autorizado.","success");
+    } catch(e) {
+      setEstado({ ok:false, error:e.message });
+      onToast(e.message,"error");
+    }
+  };
+
+  return (
+    <div className="fade">
+      <div className="stitle">🚙 Registro Ingreso Vehículos Extranjeros</div>
+      <div className="ssub">Valida el documento de admisión temporal emitido por Aduana Argentina</div>
+      <div className="card" style={{ maxWidth:580 }}>
+        <div className="fgroup">
+          <label className="flabel">Folio / Código del documento argentino</label>
+          <div style={{ display:"flex",gap:10 }}>
+            <input type="text" placeholder="ARG-2024-XK9..." value={folio} onChange={e=>setFolio(e.target.value)} 
+            onKeyDown={e=>e.key==="Enter"&&handleScan()} />
+            <button className="btn btn-primary" onClick={handleScan} disabled={estado==="loading"} style={{ flexShrink:0 }}>
+              {estado==="loading"?"⏳...":"🔍 Validar"}
+            </button>
+          </div>
+        </div>
+        {estado==="loading" && <div className="pulse" style={{ color:C.textSec,
+          fontSize:13,marginTop:8 }}>🔗 Consultando Aduana Argentina (Horcones)...</div>}
+        {estado?.ok && (
+          <div className="fade">
+            <div style={{ background:C.successBg,border:`1px solid ${C.success}40`,borderRadius:10,padding:16,marginBottom:14 }}>
+              <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:10 }}>
+                <span className="semaforo s-verde" />
+                <strong style={{ color:C.success }}>Documento válido — Ingreso autorizado</strong>
+              </div>
+              <div className="g2" style={{ fontSize:13 }}>
+                <div><strong>Patente:</strong> {estado.patente}</div>
+                <div><strong>Titular:</strong> {estado.titular}</div>
+                <div><strong>Modelo:</strong> {estado.modelo}</div>
+                <div><strong>Días restantes:</strong> <span style={{ color:C.success,fontWeight:500 }}>{estado.diasRestantes} días</span></div>
+                <div><strong>País:</strong> {estado.pais}</div>
+                <div><strong>Plazo límite:</strong> <span style={{ color:C.warning,fontWeight:500 }}>{estado.fechaLimite}</span></div>
+              </div>
+            </div>
+            <button className="btn btn-success btn-sm">✅ Registrar ingreso</button>
+          </div>
+        )}
+        {estado?.error && (
+          <div style={{ background:C.dangerBg,border:`1px solid ${C.danger}40`,borderRadius:10,padding:14,marginTop:10 }}>
+            <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:6 }}>
+              <span className="semaforo s-rojo" />
+              <strong style={{ color:C.danger }}>Error de validación</strong>
+            </div>
+            <div style={{ fontSize:13,color:C.danger }}>{estado.error}</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // VISTA: ADMIN — DASHBOARD
+function AdminDashboard({ onNav }) {
+  const now = new Date();
+  const flujo = Array.from({length:12},(_,i) => ({ hora:`${7+i}:00`,ing:Math.floor(30+Math.random()*80),
+  sal:Math.floor(20+Math.random()*70) }));
+  const maxV = Math.max(...flujo.map(h=>h.ing+h.sal));
+
+  return (
+    <div className="fade">
+      <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20 }}>
+        <div>
+          <div className="stitle">📊 Dashboard — Paso Los Libertadores</div>
+          <div className="ssub">{now.toLocaleDateString("es-CL",{weekday:"long",
+		  year:"numeric",month:"long",day:"numeric"})}</div>
+        </div>
+        <span className="badge b-green pulse">🟢 Sistema operativo</span>
+      </div>
+      <div className="g4" style={{ marginBottom:24 }}>
+        <StatCard label="Ingresos hoy" value="847" sub="↑ 8% vs ayer" color={C.navy} />
+        <StatCard label="Salidas hoy" value="712" sub="↓ 2% vs ayer" color={C.navyLight} />
+        <StatCard label="Vehículos" value="312" sub="63 extranjeros" color={C.success} />
+        <StatCard label="Alertas activas" value="4" sub="2 SAG · 2 PDI" color={C.danger} />
+      </div>
+      <div className="card" style={{ marginBottom:20 }}>
+        <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14 }}>
+          <div style={{ fontWeight:600 }}>Flujo en tiempo real — Hoy</div>
+          <div style={{ display:"flex",gap:12,fontSize:12 }}>
+            <span style={{ display:"flex",alignItems:"center",gap:5 }}><span style={{ width:12,height:12,
+              background:C.navy,borderRadius:2,display:"inline-block" }}/>Ingresos</span>
+            <span style={{ display:"flex",alignItems:"center",gap:5 }}><span style={{ width:12,height:12,
+              background:C.gold,borderRadius:2,display:"inline-block" }}/>Salidas</span>
+          </div>
+        </div>
+        <div style={{ display:"flex",alignItems:"flex-end",gap:3,height:130,overflowX:"auto" }}>
+          {flujo.map((h,i) => (
+            <div key={i} style={{ flex:1,minWidth:32,display:"flex",flexDirection:"column",alignItems:"center",gap:2 }}>
+              <div style={{ width:"90%",display:"flex",flexDirection:"column",alignItems:"center",gap:1 }}>
+                <div style={{ width:"100%",height:Math.round(h.ing/maxV*100),
+				background:C.navy,borderRadius:"3px 3px 0 0",minHeight:3 }} />
+                <div style={{ width:"100%",height:Math.round(h.sal/maxV*100),
+				background:C.gold,borderRadius:"0 0 3px 3px",minHeight:3 }} />
+              </div>
+              <div style={{ fontSize:10,color:C.textMuted,marginTop:2 }}>{h.hora}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="g2">
+        <div className="card">
+          <div style={{ fontWeight:600,marginBottom:12 }}>Ocupación por ventanilla</div>
+          {[["V1",85],["V2",72],["V3",91],["V4",43],["V5",67]].map(([v,pct]) => (
+            <div key={v} style={{ marginBottom:10 }}>
+              <div style={{ display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:4 }}>
+                <span>Ventanilla {v}</span>
+                <span style={{ fontWeight:500,color:pct>80?C.danger:pct>60?C.warning:C.success }}>{pct}%</span>
+              </div>
+              <ProgressBar value={pct} color={pct>80?C.danger:pct>60?C.warning:C.success} />
+            </div>
+          ))}
+        </div>
+        <div className="card">
+          <div style={{ fontWeight:600,marginBottom:12 }}>Estado de integraciones</div>
+          {[["API PDI","Activo",true],["API SAG","Activo",true],["Aduana Argentina","Activo",true],
+		  ["Sistema de Reportes","Activo",true],["Escáner Ventanilla 4","Fuera de línea",false]].
+		  map(([n,s,ok],i)=>(
+            <div key={i} style={{ display:"flex",justifyContent:"space-between",
+			alignItems:"center",padding:"7px 0",borderBottom:i<4?`1px solid ${C.border}`:"none",
+			fontSize:13 }}>
+              <span>{n}</span>
+              <span className={`badge ${ok?"b-green":"b-red"}`}>{ok?"🟢":"🔴"} {s}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ marginTop:20 }}>
+        <button className="btn btn-primary btn-sm" onClick={()=>onNav("reportes")}>📈 Ver reportes y exportar</button>
+      </div>
+    </div>
+  );
+}
+
+
 // VISTA: SOLICITUDES (Admin)
 // VISTA: GESTIÓN USUARIOS (Admin, CRUD)
 // VISTA: AUDITORÍA
