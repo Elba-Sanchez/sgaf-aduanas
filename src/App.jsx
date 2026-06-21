@@ -45,19 +45,19 @@ _medir: async (fn) => {
     return { aprobado: true, folio: "AU-" + Math.floor(100000 + Math.random() * 900000) };
   },
 
-  consultarPDI: async (rut) => {
+  consultarPDI: async (rut) => mockApi._medir(async () => {
     await mockApi._delay();
     const alerta = Math.random() > 0.82;
     return {
       nombre: rut === "12345678-9" ? "Juan Carlos Bodoque" : "Zacarías Flores del Campo", alerta, habilitado: !alerta, mensaje: alerta
         ? "ALERTA: Orden de arraigo nacional activo." : "Sin arraigo nacional ni órdenes vigentes."
     };
-  },
+  }),
 
-  consultarAduanaArg: async () => {
+  consultarAduanaArg: async () => mockApi._medir(async () => {
     await mockApi._delay();
     return { habilitado: true, diasRestantes: 180, titular: "Alan Brito", modelo: "Toyota Hilux 2022" };
-  },
+  }),
 };
 
 // DATOS INICIALES
@@ -201,7 +201,8 @@ function TiempoRespuesta({ ms }) {
   if (ms == null) return null;
   const ok = ms < 3000;
   return (
-    <div style={{ display:"inline-flex",alignItems:"center",gap:6,fontSize:11,color:ok?C.success:C.danger,background:ok?C.successBg:C.dangerBg,padding:"4px 10px",borderRadius:99,marginTop:8 }}>
+    <div style={{ display:"inline-flex",alignItems:"center",gap:6,fontSize:11,
+    color:ok?C.success:C.danger,background:ok?C.successBg:C.dangerBg,padding:"4px 10px",borderRadius:99,marginTop:8 }}>
       ⚡ Tiempo de respuesta: <strong>{(ms/1000).toFixed(2)}s</strong> {ok ? "(cumple RNF-R-01 < 3s)" : "(excede umbral)"}
     </div>
   );
@@ -296,8 +297,10 @@ function AppShell({ user, currentView, onNav, onLogout, children }) {
       { id:"ayuda",icon:"❓",label:"Ayuda" }],
     funcionario:[{ id:"funcionario",icon:"🖥️",label:"Panel Control" },{ id:"vehiculo_ingreso",icon:"🚙",label:"Ingreso Vehículos" },
       { id:"pdi",icon:"🔍",label:"Control PDI" }],
-    admin:      [{ id:"admin",icon:"📊",label:"Dashboard" },{ id:"solicitudes",icon:"📋",label:"Solicitudes" },
-      { id:"usuarios",icon:"👥",label:"Gestión Usuarios" },{ id:"auditoria",icon:"🔐",label:"Auditoría" },{ id:"reportes",icon:"📈",label:"Reportes" }],
+    admin:      [{ id:"admin",icon:"📊",label:"Dashboard" },
+      { id:"solicitudes",icon:"📋",label:"Solicitudes" },
+      { id:"usuarios",icon:"👥",label:"Gestión Usuarios" },
+      { id:"auditoria",icon:"🔐",label:"Auditoría" },{ id:"reportes",icon:"📈",label:"Reportes" }],
     pdi:        [{ id:"pdi",icon:"🔍",label:"Control PDI" }],
   };
   const roleLabel = { pasajero:"Pasajero/Turista",funcionario:"Funcionario Aduanas",admin:"Administrador",pdi:"Funcionario PDI" };
@@ -651,7 +654,9 @@ function VehiculoSalida({ onToast }) {
       <div className="card">
         <div className="g2">
           {[["patente","Patente *","AB1234"],["marca","Marca *","Toyota"],["modelo","Modelo *","Corolla"],
-          ["anio","Año","2022"],["color","Color","Blanco"],["motor","N° Motor","123456789"],["chasis","N° Chasis (VIN)","JT2BF22K000001"],["propietario","Propietario *","Nombre completo"],["rut","RUT propietario *","12.345.678-9"]].map(([k,lbl,ph]) => (
+          ["anio","Año","2022"],["color","Color","Blanco"],
+          ["motor","N° Motor","123456789"],["chasis","N° Chasis (VIN)","JT2BF22K000001"],
+          ["propietario","Propietario *","Nombre completo"],["rut","RUT propietario *","12.345.678-9"]].map(([k,lbl,ph]) => (
             <div key={k} className="fgroup">
               <label className="flabel">{lbl}</label>
               {k==="patente" ? (
@@ -835,6 +840,7 @@ function PDIControl({ onToast }) {
               </div>
               {estado.mensaje && <div style={{ marginTop:10,fontSize:13,color:estado.alerta?C.danger:C.success,fontWeight:500 }}>{estado.mensaje}</div>}
             </div>
+            <TiempoRespuesta ms={estado._tiempoMs} />   {/* ← AGREGA ESTA LÍNEA */}
           </div>
         )}
         {estado?.error && <div style={{ background:C.dangerBg,color:C.danger,padding:"10px 14px",
@@ -869,8 +875,10 @@ function AdminDashboard({ onNav }) {
         <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14 }}>
           <div style={{ fontWeight:600 }}>Flujo en tiempo real — Hoy</div>
           <div style={{ display:"flex",gap:12,fontSize:12 }}>
-            <span style={{ display:"flex",alignItems:"center",gap:5 }}><span style={{ width:12,height:12,background:C.navy,borderRadius:2,display:"inline-block" }}/>Ingresos</span>
-            <span style={{ display:"flex",alignItems:"center",gap:5 }}><span style={{ width:12,height:12,background:C.gold,borderRadius:2,display:"inline-block" }}/>Salidas</span>
+            <span style={{ display:"flex",alignItems:"center",gap:5 }}><span 
+            style={{ width:12,height:12,background:C.navy,borderRadius:2,display:"inline-block" }}/>Ingresos</span>
+            <span style={{ display:"flex",alignItems:"center",gap:5 }}><span 
+            style={{ width:12,height:12,background:C.gold,borderRadius:2,display:"inline-block" }}/>Salidas</span>
           </div>
         </div>
         <div style={{ display:"flex",alignItems:"flex-end",gap:3,height:130,overflowX:"auto" }}>
