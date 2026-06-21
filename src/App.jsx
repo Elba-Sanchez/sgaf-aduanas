@@ -919,12 +919,647 @@ function AdminDashboard({ onNav }) {
 
 
 // VISTA: SOLICITUDES (Admin)
+
+function SolicitudesView({ solicitudes, setSolicitudes, onToast }) {
+  const [search, setSearch] = useState("");
+  const [accionId, setAccionId] = useState(null); // id de la solicitud cuyo estado se va a cambiar
+
+  const filtered = solicitudes.filter(sol => {
+    if (!search.trim()) return true;
+    const term = search.toLowerCase();
+    return (
+      sol.id.toLowerCase().includes(term) ||
+      sol.tipo.toLowerCase().includes(term) ||
+      sol.solicitante.toLowerCase().includes(term) ||
+      sol.identificacion.toLowerCase().includes(term) ||
+      sol.estado.toLowerCase().includes(term) ||
+      sol.fecha.toLowerCase().includes(term)
+    );
+  });
+
+  const cambiarEstado = (id, nuevoEstado) => {
+    setSolicitudes(prev =>
+      prev.map(sol => (sol.id === id ? { ...sol, estado: nuevoEstado } : sol))
+    );
+    setAccionId(null);
+    onToast(`Solicitud ${id} marcada como "${nuevoEstado}".`, "success");
+  };
+
+  const estadoBadge = (estado) => {
+    switch (estado) {
+      case "Pendiente": return <span className="badge b-yellow">⏳ Pendiente</span>;
+      case "Aprobado":  return <span className="badge b-green">✅ Aprobado</span>;
+      case "Rechazado": return <span className="badge b-red">❌ Rechazado</span>;
+      default:          return <span className="badge b-gray">{estado}</span>;
+    }
+  };
+
+  return (
+    <div className="fade">
+      <div className="stitle">📋 Gestión de Solicitudes</div>
+      <div className="ssub">Administra las solicitudes de trámites del sistema</div>
+      <div className="card">
+        <div style={{ display: 'flex', gap: 10, marginBottom: 16, alignItems: 'center' }}>
+          <input
+            type="text"
+            placeholder="Buscar por ID, tipo, solicitante, identificación..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ flex: 1 }}
+          />
+          <button
+            className="btn btn-sec btn-sm"
+            onClick={() => setSearch('')}
+          >
+            Limpiar filtros
+          </button>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Tipo</th>
+              <th>Solicitante</th>
+              <th>Identificación</th>
+              <th>Estado</th>
+              <th>Fecha</th>
+              <th style={{ width: 160 }}>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length > 0 ? (
+              filtered.map(sol => (
+                <tr key={sol.id}>
+                  <td style={{ fontFamily: 'monospace' }}>{sol.id}</td>
+                  <td>{sol.tipo}</td>
+                  <td>{sol.solicitante}</td>
+                  <td>{sol.identificacion}</td>
+                  <td>{estadoBadge(sol.estado)}</td>
+                  <td>{sol.fecha}</td>
+                  <td>
+                    {sol.estado === "Pendiente" && (
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button
+                          className="btn btn-success btn-sm"
+                          onClick={() => cambiarEstado(sol.id, "Aprobado")}
+                        >
+                          Aprobar
+                        </button>
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => cambiarEstado(sol.id, "Rechazado")}
+                        >
+                          Rechazar
+                        </button>
+                      </div>
+                    )}
+                    {sol.estado !== "Pendiente" && (
+                      <span style={{ color: C.textMuted, fontSize: 12 }}>Sin acciones</span>
+                    )}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={7} style={{ textAlign: 'center', padding: 20, color: C.textMuted }}>
+                  No se encontraron solicitudes con ese criterio.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+
+        <div style={{ marginTop: 12, fontSize: 13, color: C.textMuted }}>
+          Mostrando {filtered.length} de {solicitudes.length} solicitudes
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // VISTA: GESTIÓN USUARIOS (Admin, CRUD)
+
+function GestionUsuarios({ usuarios, setUsuarios, onToast }) {
+  const [search, setSearch] = useState("");
+  const [editando, setEditando] = useState(null); // null = no se edita, objeto con datos del usuario o nuevo
+  const [form, setForm] = useState({ nombre: "", run: "", rol: "", aduana: "", correo: "" });
+  const [modo, setModo] = useState("crear"); // "crear" o "editar"
+
+  const rolesDisponibles = ["Administrador", "Funcionario", "Funcionario PDI"];
+
+  // Filtrar usuarios según búsqueda
+  const filtered = usuarios.filter(u => {
+    if (!search.trim()) return true;
+    const term = search.toLowerCase();
+    return (
+      String(u.id).includes(term) ||
+      u.nombre.toLowerCase().includes(term) ||
+      u.run.toLowerCase().includes(term) ||
+      u.rol.toLowerCase().includes(term) ||
+      u.aduana.toLowerCase().includes(term) ||
+      u.correo.toLowerCase().includes(term)
+    );
+  });
+
+  // Iniciar creación de nuevo usuario
+  const iniciarCrear = () => {
+    setForm({ nombre: "", run: "", rol: "", aduana: "", correo: "" });
+    setModo("crear");
+    setEditando({}); // objeto vacío para indicar que se está creando
+  };
+
+  // Iniciar edición de usuario existente
+  const iniciarEditar = (user) => {
+    setForm({ nombre: user.nombre, run: user.run, rol: user.rol, aduana: user.aduana, correo: user.correo });
+    setModo("editar");
+    setEditando(user);
+  };
+
+  // Cancelar edición/creación
+  const cancelar = () => {
+    setEditando(null);
+    setForm({ nombre: "", run: "", rol: "", aduana: "", correo: "" });
+  };
+
+  // Guardar usuario (crear o actualizar)
+  const guardarUsuario = () => {
+    // Validación básica
+    if (!form.nombre.trim() || !form.run.trim() || !form.rol || !form.aduana.trim() || !form.correo.trim()) {
+      onToast("Completa todos los campos obligatorios.", "error");
+      return;
+    }
+
+    if (modo === "crear") {
+      const nuevoId = Math.max(...usuarios.map(u => u.id), 0) + 1;
+      const nuevo = {
+        id: nuevoId,
+        nombre: form.nombre.trim(),
+        run: form.run.trim(),
+        rol: form.rol,
+        aduana: form.aduana.trim(),
+        correo: form.correo.trim(),
+      };
+      setUsuarios(prev => [...prev, nuevo]);
+      onToast(`Usuario ${nuevo.nombre} creado exitosamente.`, "success");
+    } else {
+      setUsuarios(prev =>
+        prev.map(u =>
+          u.id === editando.id
+            ? { ...u, nombre: form.nombre.trim(), run: form.run.trim(), rol: form.rol, aduana: form.aduana.trim(), correo: form.correo.trim() }
+            : u
+        )
+      );
+      onToast(`Usuario ${form.nombre} actualizado.`, "success");
+    }
+    cancelar();
+  };
+
+  // Eliminar usuario
+  const eliminarUsuario = (user) => {
+    if (window.confirm(`¿Eliminar al usuario ${user.nombre} (${user.run})?`)) {
+      setUsuarios(prev => prev.filter(u => u.id !== user.id));
+      onToast(`Usuario ${user.nombre} eliminado.`, "info");
+    }
+  };
+
+  return (
+    <div className="fade">
+      <div className="stitle">👥 Gestión de Usuarios</div>
+      <div className="ssub">Administra las cuentas de los funcionarios del sistema</div>
+
+      <div className="card">
+        {/* Barra de búsqueda y botón agregar */}
+        <div style={{ display: 'flex', gap: 10, marginBottom: 16, alignItems: 'center' }}>
+          <input
+            type="text"
+            placeholder="Buscar por ID, nombre, RUN, rol, aduana o correo..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ flex: 1 }}
+          />
+          <button className="btn btn-sec btn-sm" onClick={() => setSearch('')}>
+            Limpiar
+          </button>
+          <button className="btn btn-primary btn-sm" onClick={iniciarCrear}>
+            + Agregar usuario
+          </button>
+        </div>
+
+        {/* Tabla de usuarios */}
+        <table>
+          <thead>
+            <tr>
+              <th style={{ width: 50 }}>ID</th>
+              <th>Nombre</th>
+              <th>RUN</th>
+              <th>Rol</th>
+              <th>Aduana</th>
+              <th>Correo</th>
+              <th style={{ width: 120 }}>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length > 0 ? (
+              filtered.map(u => (
+                <tr key={u.id}>
+                  <td>{u.id}</td>
+                  <td>{u.nombre}</td>
+                  <td>{u.run}</td>
+                  <td>{u.rol}</td>
+                  <td>{u.aduana}</td>
+                  <td>{u.correo}</td>
+                  <td>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button className="btn btn-sec btn-sm" onClick={() => iniciarEditar(u)}>Editar</button>
+                      <button className="btn btn-danger btn-sm" onClick={() => eliminarUsuario(u)}>Eliminar</button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={7} style={{ textAlign: 'center', padding: 20, color: C.textMuted }}>
+                  No se encontraron usuarios con ese criterio.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+        <div style={{ marginTop: 12, fontSize: 13, color: C.textMuted }}>
+          {filtered.length} de {usuarios.length} usuarios
+        </div>
+      </div>
+
+      {/* Formulario de creación/edición (aparece como tarjeta debajo) */}
+      {editando !== null && (
+        <div className="card fade" style={{ marginTop: 20 }}>
+          <div style={{ fontWeight: 600, marginBottom: 14 }}>
+            {modo === "crear" ? "Nuevo usuario" : `Editando: ${editando.nombre}`}
+          </div>
+          <div className="g2">
+            <div className="fgroup">
+              <label className="flabel">Nombre completo *</label>
+              <input
+                type="text"
+                placeholder="Nombre y apellido"
+                value={form.nombre}
+                onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
+              />
+            </div>
+            <div className="fgroup">
+              <label className="flabel">RUN *</label>
+              <input
+                type="text"
+                placeholder="12.345.678-9"
+                value={form.run}
+                onChange={e => setForm(f => ({ ...f, run: e.target.value }))}
+              />
+            </div>
+            <div className="fgroup">
+              <label className="flabel">Rol *</label>
+              <select value={form.rol} onChange={e => setForm(f => ({ ...f, rol: e.target.value }))}>
+                <option value="">Seleccionar rol...</option>
+                {rolesDisponibles.map(rol => (
+                  <option key={rol} value={rol}>{rol}</option>
+                ))}
+              </select>
+            </div>
+            <div className="fgroup">
+              <label className="flabel">Aduana *</label>
+              <input
+                type="text"
+                placeholder="Los Libertadores"
+                value={form.aduana}
+                onChange={e => setForm(f => ({ ...f, aduana: e.target.value }))}
+              />
+            </div>
+            <div className="fgroup" style={{ gridColumn: "1 / -1" }}>
+              <label className="flabel">Correo electrónico *</label>
+              <input
+                type="email"
+                placeholder="usuario@aduana.cl"
+                value={form.correo}
+                onChange={e => setForm(f => ({ ...f, correo: e.target.value }))}
+              />
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+            <button className="btn btn-primary" onClick={guardarUsuario}>
+              {modo === "crear" ? "Crear usuario" : "Guardar cambios"}
+            </button>
+            <button className="btn btn-sec" onClick={cancelar}>Cancelar</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 // VISTA: AUDITORÍA
+
+function AuditoriaView({ logs }) {
+  const [search, setSearch] = useState("");
+
+  const filtered = logs.filter(log => {
+    if (!search.trim()) return true;
+    const term = search.toLowerCase();
+    return (
+      String(log.id).includes(term) ||
+      log.timestamp.toLowerCase().includes(term) ||
+      log.usuario.toLowerCase().includes(term) ||
+      log.accion.toLowerCase().includes(term)
+    );
+  });
+
+  return (
+    <div className="fade">
+      <div className="stitle"> Auditoría del Sistema</div>
+      <div className="ssub">
+        Registro histórico de acciones realizadas por los usuarios
+      </div>
+      <div className="card">
+        <div style={{ display: 'flex', gap: 10, marginBottom: 16, alignItems: 'center' }}>
+          <input
+            type="text"
+            placeholder="Buscar por ID, fecha, usuario o acción..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ flex: 1 }}
+          />
+          <button
+            className="btn btn-sec btn-sm"
+            onClick={() => setSearch('')}
+          >
+            Limpiar filtros
+          </button>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th style={{ width: 60 }}>ID</th>
+              <th>Fecha y Hora</th>
+              <th>Usuario</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length > 0 ? (
+              filtered.map(log => (
+                <tr key={log.id}>
+                  <td>{log.id}</td>
+                  <td>{log.timestamp}</td>
+                  <td>{log.usuario}</td>
+                  <td>{log.accion}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={4} style={{ textAlign: 'center', padding: 20, color: C.textMuted }}>
+                  No se encontraron registros de auditoría.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+
+        <div style={{ marginTop: 12, fontSize: 13, color: C.textMuted }}>
+          Mostrando {filtered.length} de {logs.length} registros
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // VISTA: REPORTES
+
+function ReportesView({ onToast }) {
+  const [tipo, setTipo] = useState("flujo");
+  const [desde, setDesde] = useState("");
+  const [hasta, setHasta] = useState("");
+  const [reporteGenerado, setReporteGenerado] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const generarReporte = () => {
+    if (!desde || !hasta) {
+      onToast("Selecciona ambas fechas.", "error");
+      return;
+    }
+    setLoading(true);
+    setTimeout(() => {
+      // Datos simulados por tipo
+      const data = {
+        flujo: {
+          ingresos: Math.floor(500 + Math.random() * 2000),
+          salidas: Math.floor(400 + Math.random() * 1800),
+          vehiculos: Math.floor(100 + Math.random() * 500),
+          alertas: Math.floor(Math.random() * 10),
+        },
+        sag: {
+          declaraciones: Math.floor(100 + Math.random() * 500),
+          aprobadas: Math.floor(80 + Math.random() * 300),
+          rechazadas: Math.floor(10 + Math.random() * 50),
+          revisiones: Math.floor(5 + Math.random() * 30),
+        },
+        pdi: {
+          consultas: Math.floor(200 + Math.random() * 800),
+          alertas: Math.floor(Math.random() * 15),
+        },
+      };
+      setReporteGenerado({ tipo, data: data[tipo] || data.flujo, desde, hasta });
+      setLoading(false);
+      onToast("Reporte generado correctamente.", "success");
+    }, 1200);
+  };
+
+  const exportar = (formato) => {
+    onToast(`Exportando reporte en formato ${formato.toUpperCase()}...`, "info");
+    setTimeout(() => {
+      onToast("Reporte descargado (simulación).", "success");
+    }, 800);
+  };
+
+  const renderResultados = () => {
+    if (!reporteGenerado) return null;
+    const { tipo, data, desde, hasta } = reporteGenerado;
+
+    return (
+      <div className="fade" style={{ marginTop: 20 }}>
+        <div className="card">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <div>
+              <div style={{ fontWeight: 600 }}>Resultados del reporte</div>
+              <div style={{ fontSize: 13, color: C.textSec }}>
+                Periodo: {desde} al {hasta} — Tipo: {tipo === "flujo" ? "Flujo Fronterizo" : tipo === "sag" ? "Declaraciones SAG" : "Consultas PDI"}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button className="btn btn-sec btn-sm" onClick={() => exportar("pdf")}>📄 Exportar PDF</button>
+              <button className="btn btn-sec btn-sm" onClick={() => exportar("csv")}>📊 Exportar CSV</button>
+            </div>
+          </div>
+
+          {tipo === "flujo" && (
+            <>
+              <div className="g4" style={{ marginBottom: 16 }}>
+                <StatCard label="Ingresos" value={data.ingresos} color={C.navy} />
+                <StatCard label="Salidas" value={data.salidas} color={C.navyLight} />
+                <StatCard label="Vehículos" value={data.vehiculos} color={C.success} />
+                <StatCard label="Alertas" value={data.alertas} color={C.danger} />
+              </div>
+              <div style={{ marginTop: 10 }}>
+                <div style={{ fontWeight: 500, fontSize: 13, marginBottom: 8 }}>Comparativa Ingresos vs Salidas</div>
+                <div style={{ display: "flex", gap: 20, alignItems: "flex-end", height: 80 }}>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{
+                      width: 40, background: C.navy,
+                      height: Math.round(data.ingresos / Math.max(data.ingresos, data.salidas, 1) * 60),
+                      borderRadius: "3px 3px 0 0", margin: "0 auto"
+                    }} />
+                    <div style={{ fontSize: 10, marginTop: 4 }}>Ingresos</div>
+                    <div style={{ fontSize: 11, fontWeight: 500 }}>{data.ingresos}</div>
+                  </div>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{
+                      width: 40, background: C.gold,
+                      height: Math.round(data.salidas / Math.max(data.ingresos, data.salidas, 1) * 60),
+                      borderRadius: "3px 3px 0 0", margin: "0 auto"
+                    }} />
+                    <div style={{ fontSize: 10, marginTop: 4 }}>Salidas</div>
+                    <div style={{ fontSize: 11, fontWeight: 500 }}>{data.salidas}</div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {tipo === "sag" && (
+            <div className="g4" style={{ marginBottom: 16 }}>
+              <StatCard label="Declaraciones" value={data.declaraciones} color={C.navy} />
+              <StatCard label="Aprobadas" value={data.aprobadas} color={C.success} />
+              <StatCard label="Rechazadas" value={data.rechazadas} color={C.danger} />
+              <StatCard label="Revisiones" value={data.revisiones} color={C.warning} />
+            </div>
+          )}
+
+          {tipo === "pdi" && (
+            <div className="g2" style={{ marginBottom: 16 }}>
+              <StatCard label="Consultas realizadas" value={data.consultas} color={C.navy} />
+              <StatCard label="Alertas generadas" value={data.alertas} color={C.danger} />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="fade">
+      <div className="stitle">📈 Reportes</div>
+      <div className="ssub">Genera reportes personalizados del sistema aduanero</div>
+      <div className="card">
+        <div className="g2">
+          <div className="fgroup">
+            <label className="flabel">Tipo de reporte</label>
+            <select value={tipo} onChange={e => setTipo(e.target.value)}>
+              <option value="flujo">Flujo Fronterizo</option>
+              <option value="sag">Declaraciones SAG</option>
+              <option value="pdi">Consultas PDI</option>
+            </select>
+          </div>
+          <div></div>
+          <div className="fgroup">
+            <label className="flabel">Desde</label>
+            <input type="date" value={desde} onChange={e => setDesde(e.target.value)} />
+          </div>
+          <div className="fgroup">
+            <label className="flabel">Hasta</label>
+            <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} />
+          </div>
+        </div>
+        <button className="btn btn-primary" onClick={generarReporte} disabled={loading}>
+          {loading ? "Generando..." : "📋 Generar reporte"}
+        </button>
+        {renderResultados()}
+      </div>
+    </div>
+  );
+}
+
 // VISTA: AYUDA
 
+function AyudaView() {
+  return (
+    <div className="fade">
+      <div className="stitle">❓ Centro de Ayuda</div>
+      <div className="ssub">Guía para cruzar el Paso Los Libertadores sin contratiempos</div>
 
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div style={{ fontWeight: 600, marginBottom: 12 }}>📌 Pasos antes de llegar a la frontera</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {[
+            { icon: "🌿", title: "Declaración SAG", desc: "Indica si transportas frutas, carnes, lácteos, mascotas u otros productos orgánicos. Es obligatorio para todo viajero." },
+            { icon: "👶", title: "Autorización de menores", desc: "Si viajas con menores de edad sin ambos padres, debes presentar un permiso notarial firmado por el ausente." },
+            { icon: "🚗", title: "Salida de vehículo", desc: "Si sales de Chile con un vehículo particular, necesitas el formulario de 'Salida y Admisión Temporal' para presentar en Argentina." },
+            { icon: "🛂", title: "Control migratorio", desc: "Presenta tu cédula de identidad o pasaporte vigente en el control de Policía Internacional." },
+          ].map((item, i) => (
+            <div key={i} style={{ display: "flex", gap: 12, padding: 10, background: C.bg, borderRadius: 8 }}>
+              <div style={{ fontSize: 24, minWidth: 32 }}>{item.icon}</div>
+              <div>
+                <div style={{ fontWeight: 500, fontSize: 14 }}>{item.title}</div>
+                <div style={{ fontSize: 13, color: C.textSec }}>{item.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div style={{ fontWeight: 600, marginBottom: 12 }}>❔ Preguntas frecuentes</div>
+        {[
+          { q: "¿Cuánto demora el cruce?", a: "En temporada normal, el proceso completo toma entre 10 y 20 minutos. En alta temporada (verano / fines de semana largos) puede extenderse hasta 45 minutos." },
+          { q: "¿Necesito visa para Argentina?", a: "Ciudadanos chilenos solo necesitan cédula de identidad vigente. Otras nacionalidades deben consultar los requisitos migratorios argentinos." },
+          { q: "¿Qué productos no puedo llevar?", a: "Están prohibidos productos cárnicos frescos, frutas sin certificación, lácteos no industriales y plantas con tierra. El SAG realiza inspecciones aleatorias." },
+          { q: "¿Cómo obtengo el permiso para un menor?", a: "Debes obtener una autorización notarial firmada por el padre/madre ausente. Luego súbela en el módulo 'Autorización Menores'." },
+          { q: "¿Puedo llevar mi mascota?", a: "Sí, pero debes declararla en el formulario SAG. Se requiere certificado sanitario y vacunas al día." },
+        ].map((faq, i) => (
+          <details key={i} style={{ marginBottom: 8, borderBottom: i < 4 ? `1px solid ${C.border}` : "none", paddingBottom: 8 }}>
+            <summary style={{ cursor: "pointer", fontSize: 14, fontWeight: 500, color: C.textPrimary }}>
+              {faq.q}
+            </summary>
+            <div style={{ fontSize: 13, color: C.textSec, marginTop: 6, paddingLeft: 4 }}>{faq.a}</div>
+          </details>
+        ))}
+      </div>
+
+      <div className="card">
+        <div style={{ fontWeight: 600, marginBottom: 12 }}>📞 Contacto y emergencias</div>
+        <div className="g2">
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 500 }}>Aduana Los Libertadores</div>
+            <div style={{ fontSize: 13, color: C.textSec }}>+56 34 258 9100</div>
+            <div style={{ fontSize: 13, color: C.textSec }}>consultas@aduana.cl</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 500 }}>SAG (Servicio Agrícola Ganadero)</div>
+            <div style={{ fontSize: 13, color: C.textSec }}>+56 34 258 9120</div>
+            <div style={{ fontSize: 13, color: C.textSec }}>sag.libertadores@sag.gob.cl</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 500 }}>PDI – Paso Fronterizo</div>
+            <div style={{ fontSize: 13, color: C.textSec }}>+56 34 258 9140</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 500 }}>Emergencias</div>
+            <div style={{ fontSize: 13, color: C.textSec }}>133 (Carabineros) / 131 (Ambulancia)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // APP PRINCIPAL
 export default function App() {
