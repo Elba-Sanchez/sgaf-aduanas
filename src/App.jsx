@@ -24,6 +24,13 @@ const mockApi = {
   _delay: (ms = 1400) => new Promise((res, rej) =>
     setTimeout(() => Math.random() < 0.08 ? rej(new Error("Error de conexión. Intente nuevamente.")) : res(), ms)),
 
+_medir: async (fn) => {
+    const start = performance.now();
+    const data = await fn();
+    const ms = Math.round(performance.now() - start);
+    return { ...data, _tiempoMs: ms };
+  },
+
   validarSag: async () => {
     await mockApi._delay();
     const ok = Math.random() > 0.3;
@@ -53,7 +60,7 @@ const mockApi = {
   },
 };
 
-// DATOS
+// DATOS INICIALES
 const USUARIOS_INIT = [
   { id: 1, nombre: "Tulio Triviño", run: "12.345.678-9", rol: "Administrador", aduana: "Los Libertadores", correo: "tulio@aduana.cl" },
   { id: 2, nombre: "Juanin Juan Harry", run: "15.987.654-3", rol: "Funcionario", aduana: "Pino Hachado", correo: "juanin@aduana.cl" },
@@ -150,6 +157,8 @@ const CSS = `
   tr:hover td{background:#FAFBFE;}
 `;
 
+// COMPONENTES COMPARTIDOS
+
 function Toast({ msg, type, onClose }) {
   useEffect(() => { const t = setTimeout(onClose, 4000); return () => clearTimeout(t); }, []);
   const bg = { success: C.successBg, error: C.dangerBg, info: C.infoBg, warning: C.warningBg };
@@ -188,6 +197,42 @@ function Spinner() {
   return <span className="pulse" style={{ color: C.textMuted }}> Procesando...</span>;
 }
 
+function TiempoRespuesta({ ms }) {
+  if (ms == null) return null;
+  const ok = ms < 3000;
+  return (
+    <div style={{ display:"inline-flex",alignItems:"center",gap:6,fontSize:11,color:ok?C.success:C.danger,background:ok?C.successBg:C.dangerBg,padding:"4px 10px",borderRadius:99,marginTop:8 }}>
+      ⚡ Tiempo de respuesta: <strong>{(ms/1000).toFixed(2)}s</strong> {ok ? "(cumple RNF-R-01 < 3s)" : "(excede umbral)"}
+    </div>
+  );
+}
+
+// RBAC - Control de acceso por roles
+const ACCESO_PERMITIDO = {
+  pasajero:    ["pasajero", "sag", "menores", "vehiculo_salida", "ayuda"],
+  funcionario: ["funcionario", "vehiculo_ingreso", "pdi"],
+  admin:       ["admin", "solicitudes", "usuarios", "auditoria", "reportes"],
+  pdi:         ["pdi"],
+};
+
+function AccesoDenegado({ view, role }) {
+  return (
+    <div className="fade" style={{ display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh" }}>
+      <div className="card" style={{ maxWidth:460,textAlign:"center",borderLeft:`4px solid ${C.danger}` }}>
+        <div style={{ fontSize:36,marginBottom:10 }}>⛔</div>
+        <div style={{ fontSize:17,fontWeight:600,color:C.danger,marginBottom:6 }}>Acceso denegado</div>
+        <div style={{ fontSize:13,color:C.textSec,marginBottom:14 }}>
+          Tu rol actual (<strong>{role}</strong>) no tiene permisos para acceder al recurso solicitado
+          (<code>{view}</code>). Esta restricción se aplica según control de acceso basado en roles (RBAC).
+        </div>
+        <span className="badge b-red">RNF-S-02 · Control de acceso por roles</span>
+      </div>
+    </div>
+  );
+}
+
+// LOGIN 
+
 function LoginView({ onLogin }) {
   const [doc, setDoc] = useState("");
   const [pass, setPass] = useState("");
@@ -205,21 +250,16 @@ function LoginView({ onLogin }) {
   };
 
   return (
-    <div style={{
-      minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
-      background: `linear-gradient(135deg, ${C.navy} 0%, ${C.navyLight} 100%)`
-    }}>
-      <div className="fade" style={{ width: "100%", maxWidth: 420, padding: "0 16px" }}>
-        <div className="card" style={{ padding: 36 }}>
-          <div style={{ textAlign: "center", marginBottom: 28 }}>
-            <div style={{
-              width: 60, height: 60, background: C.navy, borderRadius: 14, display: "flex",
-              alignItems: "center", justifyContent: "center", margin: "0 auto 12px",
-              fontSize: 26
-            }}>🛃</div>
-            <div style={{ fontFamily: "'Source Serif 4',serif", fontSize: 22, fontWeight: 600, color: C.navy }}>SGAF</div>
-            <div style={{ fontSize: 12, color: C.textSec, marginTop: 3 }}>Sistema de Gestión Aduanera Fronteriza</div>
-            <div style={{ fontSize: 11, color: C.textMuted, marginTop: 2 }}>Paso Los Libertadores · Chile</div>
+    <div style={{ minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",
+    background:`linear-gradient(135deg, ${C.navy} 0%, ${C.navyLight} 100%)` }}>
+      <div className="fade" style={{ width:"100%",maxWidth:420,padding:"0 16px" }}>
+        <div className="card" style={{ padding:36 }}>
+          <div style={{ textAlign:"center",marginBottom:28 }}>
+            <div style={{ width:60,height:60,background:C.navy,borderRadius:14,display:"flex",
+              alignItems:"center",justifyContent:"center",margin:"0 auto 12px",fontSize:26 }}>🛃</div>
+            <div style={{ fontFamily:"'Source Serif 4',serif",fontSize:22,fontWeight:600,color:C.navy }}>SGAF</div>
+            <div style={{ fontSize:12,color:C.textSec,marginTop:3 }}>Sistema de Gestión Aduanera Fronteriza</div>
+            <div style={{ fontSize:11,color:C.textMuted,marginTop:2 }}>Paso Los Libertadores · Chile</div>
           </div>
           <div className="fgroup">
             <label className="flabel">RUT / Pasaporte</label>
@@ -227,20 +267,15 @@ function LoginView({ onLogin }) {
           </div>
           <div className="fgroup">
             <label className="flabel">Contraseña</label>
-            <input type="password" placeholder="••••••••" value={pass} onChange={e => setPass(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && handleLogin()} />
+            <input type="password" placeholder="••••••••" value={pass} onChange={e => setPass(e.target.value)} 
+            onKeyDown={e => e.key === "Enter" && handleLogin()} />
           </div>
-          {err && <div style={{
-            background: C.dangerBg, color: C.danger, padding: "10px 14px", borderRadius: 8, fontSize: 13,
-            marginBottom: 14
-          }}>{err}</div>}
-          <button className="btn btn-primary" style={{
-            width: "100%", justifyContent: "center", padding: 11,
-            fontSize: 15
-          }} onClick={handleLogin} disabled={loading}>
+          {err && <div style={{ background:C.dangerBg,color:C.danger,padding:"10px 14px",borderRadius:8,fontSize:13,marginBottom:14 }}>{err}</div>}
+          <button className="btn btn-primary" style={{ width:"100%",justifyContent:"center",padding:11,fontSize:15 }}
+           onClick={handleLogin} disabled={loading}>
             {loading ? "Verificando..." : "Ingresar al sistema"}
           </button>
-          <div style={{ marginTop: 20, padding: 12, background: C.bg, borderRadius: 8, fontSize: 12, color: C.textSec, lineHeight: 1.7 }}>
+          <div style={{ marginTop:20,padding:12,background:C.bg,borderRadius:8,fontSize:12,color:C.textSec,lineHeight:1.7 }}>
             <strong>Cuentas demo:</strong><br />
             Pasajero: <code>12345678-9</code> / <code>pasajero123</code><br />
             Funcionario: <code>87654321-0</code> / <code>func123</code><br />
@@ -256,65 +291,60 @@ function LoginView({ onLogin }) {
 // APP SHELL (Sidebar)
 function AppShell({ user, currentView, onNav, onLogout, children }) {
   const navMap = {
-    pasajero: [{ id: "pasajero", icon: "🏠", label: "Inicio" }, { id: "sag", icon: "🌿", label: "Declaración SAG" },
-    { id: "menores", icon: "👶", label: "Autorización Menores" }, { id: "vehiculo_salida", icon: "🚗", label: "Salida Vehículo" },
-    { id: "ayuda", icon: "❓", label: "Ayuda" }],
-    funcionario: [{ id: "funcionario", icon: "🖥️", label: "Panel Control" }, { id: "vehiculo_ingreso", icon: "🚙", label: "Ingreso Vehículos" },
-    { id: "pdi", icon: "🔍", label: "Control PDI" }],
-    admin: [{ id: "admin", icon: "📊", label: "Dashboard" }, { id: "solicitudes", icon: "📋", label: "Solicitudes" },
-    { id: "usuarios", icon: "👥", label: "Gestión Usuarios" }, { id: "auditoria", icon: "🔐", label: "Auditoría" },
-    { id: "reportes", icon: "📈", label: "Reportes" }],
-    pdi: [{ id: "pdi", icon: "🔍", label: "Control PDI" }],
+    pasajero:   [{ id:"pasajero",icon:"🏠",label:"Inicio" },{ id:"sag",icon:"🌿",label:"Declaración SAG" },
+      { id:"menores",icon:"👶",label:"Autorización Menores" },{ id:"vehiculo_salida",icon:"🚗",label:"Salida Vehículo" },
+      { id:"ayuda",icon:"❓",label:"Ayuda" }],
+    funcionario:[{ id:"funcionario",icon:"🖥️",label:"Panel Control" },{ id:"vehiculo_ingreso",icon:"🚙",label:"Ingreso Vehículos" },
+      { id:"pdi",icon:"🔍",label:"Control PDI" }],
+    admin:      [{ id:"admin",icon:"📊",label:"Dashboard" },{ id:"solicitudes",icon:"📋",label:"Solicitudes" },
+      { id:"usuarios",icon:"👥",label:"Gestión Usuarios" },{ id:"auditoria",icon:"🔐",label:"Auditoría" },{ id:"reportes",icon:"📈",label:"Reportes" }],
+    pdi:        [{ id:"pdi",icon:"🔍",label:"Control PDI" }],
   };
-  const roleLabel = { pasajero: "Pasajero/Turista", funcionario: "Funcionario Aduanas", admin: "Administrador", pdi: "Funcionario PDI" };
+  const roleLabel = { pasajero:"Pasajero/Turista",funcionario:"Funcionario Aduanas",admin:"Administrador",pdi:"Funcionario PDI" };
   const navItems = navMap[user.role] || [];
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
-      <aside style={{
-        width: 220, background: C.white, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column",
-        position: "sticky", top: 0, height: "100vh", overflowY: "auto"
-      }}>
-        <div style={{ padding: "18px 14px 14px", borderBottom: `1px solid ${C.border}` }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{
-              width: 34, height: 34, background: C.navy, borderRadius: 8, display: "flex", alignItems: "center",
-              justifyContent: "center", fontSize: 16
-            }}>🛃</div>
+    <div style={{ display:"flex",minHeight:"100vh" }}>
+      <aside style={{ width:220,background:C.white,borderRight:`1px solid ${C.border}`,display:"flex",flexDirection:"column",
+      position:"sticky",top:0,height:"100vh",overflowY:"auto" }}>
+        <div style={{ padding:"18px 14px 14px",borderBottom:`1px solid ${C.border}` }}>
+          <div style={{ display:"flex",alignItems:"center",gap:10 }}>
+            <div style={{ width:34,height:34,background:C.navy,borderRadius:8,display:"flex",alignItems:"center",
+              justifyContent:"center",fontSize:16 }}>🛃</div>
             <div>
-              <div style={{ fontFamily: "'Source Serif 4',serif", fontSize: 14, fontWeight: 600, color: C.navy }}>SGAF</div>
-              <div style={{ fontSize: 10, color: C.textMuted }}>Aduanas Chile</div>
+              <div style={{ fontFamily:"'Source Serif 4',serif",fontSize:14,fontWeight:600,color:C.navy }}>SGAF</div>
+              <div style={{ fontSize:10,color:C.textMuted }}>Aduanas Chile</div>
             </div>
           </div>
         </div>
-        <div style={{ padding: "10px 10px 8px", borderBottom: `1px solid ${C.border}` }}>
-          <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 5, paddingLeft: 4 }}>Sesión activa</div>
-          <div style={{ padding: "7px 10px", background: C.bg, borderRadius: 8 }}>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textPrimary }}>{user.name}</div>
-            <span className="badge b-blue" style={{ marginTop: 4, fontSize: 10 }}>{roleLabel[user.role]}</span>
+        <div style={{ padding:"10px 10px 8px",borderBottom:`1px solid ${C.border}` }}>
+          <div style={{ fontSize:11,color:C.textMuted,marginBottom:5,paddingLeft:4 }}>Sesión activa</div>
+          <div style={{ padding:"7px 10px",background:C.bg,borderRadius:8 }}>
+            <div style={{ fontSize:13,fontWeight:500,color:C.textPrimary }}>{user.name}</div>
+            <span className="badge b-blue" style={{ marginTop:4,fontSize:10 }}>{roleLabel[user.role]}</span>
           </div>
         </div>
-        <nav style={{ flex: 1, padding: "8px 8px" }}>
+        <nav style={{ flex:1,padding:"8px 8px" }}>
           {navItems.map(n => (
-            <button key={n.id} className={`nav-item ${currentView === n.id ? "active" : ""}`} onClick={() => onNav(n.id)}>
+            <button key={n.id} className={`nav-item ${currentView===n.id?"active":""}`} onClick={() => onNav(n.id)}>
               <span>{n.icon}</span>{n.label}
             </button>
           ))}
         </nav>
-        <div style={{ padding: "8px 8px 14px" }}>
-          <div style={{ padding: "8px 12px", fontSize: 12, color: C.textMuted, borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
+        <div style={{ padding:"8px 8px 14px" }}>
+          <div style={{ padding:"8px 12px",fontSize:12,color:C.textMuted,borderTop:`1px solid ${C.border}`,paddingTop:12 }}>
             <div>Paso Los Libertadores</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+            <div style={{ display:"flex",alignItems:"center",gap:6,marginTop:4 }}>
               <span className="semaforo s-verde" />
-              <span style={{ color: C.success, fontWeight: 500 }}>Sistema operativo</span>
+              <span style={{ color:C.success,fontWeight:500 }}>Sistema operativo</span>
             </div>
           </div>
-          <button className="nav-item" onClick={onLogout} style={{ color: C.danger, marginTop: 4 }}>
+          <button className="nav-item" onClick={onLogout} style={{ color:C.danger,marginTop:4 }}>
             <span>🚪</span>Cerrar sesión
           </button>
         </div>
       </aside>
-      <main style={{ flex: 1, padding: "28px 32px", overflowY: "auto", maxWidth: "100%" }}>
+      <main style={{ flex:1,padding:"28px 32px",overflowY:"auto",maxWidth:"100%" }}>
         {children}
       </main>
     </div>
@@ -332,12 +362,12 @@ function PasajeroHome({ user, onNav }) {
     <div className="fade">
       <div style={{ marginBottom:24 }}>
         <div className="stitle">Bienvenido/a, {user.name.split(" ")[0]} 👋</div>
-        <div className="ssub">Completa tus trámites antes de llegar 
-		al paso fronterizo Los Libertadores</div>
+        <div className="ssub">Completa tus trámites antes de llegar al paso fronterizo Los Libertadores</div>
       </div>
       <div style={{ background:C.navy,borderRadius:12,padding:20,marginBottom:24,color:"#fff" }}>
         <div style={{ fontSize:15,fontWeight:600,marginBottom:6 }}>📢 Aviso importante</div>
-        <div style={{ fontSize:13,opacity:0.9 }}>Completa tu declaración SAG con anticipación. Tiempo promedio de cruce hoy: <strong>12 minutos</strong> (normal).</div>
+        <div style={{ fontSize:13,opacity:0.9 }}>Completa tu declaración SAG con anticipación. Tiempo promedio de cruce hoy: 
+          <strong>12 minutos</strong> (normal).</div>
         <div style={{ marginTop:10,display:"flex",gap:8,flexWrap:"wrap" }}>
           <span className="badge" style={{ background:"rgba(255,255,255,0.2)",color:"#fff" }}>🟢 Sistema operativo</span>
           <span className="badge" style={{ background:"rgba(255,255,255,0.2)",color:"#fff" }}>⏱️ Mayor afluencia: 09:30 - 18:00</span>
@@ -374,7 +404,7 @@ function SagForm({ onToast }) {
   const handleEnviar = async () => {
     setEstado("loading");
     try {
-      const res = await mockApi.validarSag();
+      const res = await mockApi.validarSAG();
       setEstado(res);
       onToast(res.aprobado ? "Declaración aceptada." : "Requiere revisión presencial.", res.aprobado ? "success" : "warning");
     } catch (e) {
@@ -393,10 +423,11 @@ function SagForm({ onToast }) {
           {estado.aprobado ? "Declaración aceptada" : "Revisión presencial requerida"}
         </div>
         <div style={{ fontSize:13,color:C.textSec,marginBottom:16 }}>{estado.mensaje}</div>
-        <div style={{ background:C.bg,borderRadius:8,padding:"10px 16px",display:"inline-block",marginBottom:20 }}>
+        <div style={{ background:C.bg,borderRadius:8,padding:"10px 16px",display:"inline-block",marginBottom:8 }}>
           <div style={{ fontSize:12,color:C.textMuted }}>Folio SAG</div>
           <div style={{ fontFamily:"monospace",fontSize:18,fontWeight:600,color:C.navy }}>{estado.folio}</div>
         </div>
+        <div style={{ marginBottom:16 }}><TiempoRespuesta ms={estado._tiempoMs} /></div>
         <div style={{ display:"flex",gap:10,justifyContent:"center" }}>
           <button className="btn btn-primary btn-sm">⬇️ Descargar comprobante</button>
           <button className="btn btn-sec btn-sm" onClick={() => setEstado(null)}>← Volver</button>
@@ -413,8 +444,9 @@ function SagForm({ onToast }) {
         <div style={{ marginBottom:16 }}>
           <div style={{ fontWeight:500,marginBottom:10 }}>¿Transportas alguno de estos productos?</div>
           <div className="g2">
-            {[["frutas","🍎 Frutas y verduras"],["carnes","🥩 Carnes y embutidos"],["lacteos","🧀 Lácteos y huevos"],["mascotas",
-            "🐾 Mascotas vivas"],["semillas","🌱 Semillas y plantas"],["otro","📦 Otros productos orgánicos"]].map(([k,lbl]) => (
+            {[["frutas","🍎 Frutas y verduras"],["carnes","🥩 Carnes y embutidos"],
+            ["lacteos","🧀 Lácteos y huevos"],["mascotas","🐾 Mascotas vivas"],["semillas","🌱 Semillas y plantas"],
+            ["otro","📦 Otros productos orgánicos"]].map(([k,lbl]) => (
               <label key={k} style={{ display:"flex",alignItems:"center",gap:10,cursor:"pointer",padding:"8px 12px",
               borderRadius:8,border:`1px solid ${form[k]?C.navyLight:C.border}`,background:form[k]?C.infoBg:"#fff",transition:"all 0.15s" }}>
                 <input type="checkbox" checked={form[k]} onChange={() => check(k)} style={{ width:"auto",accentColor:C.navy }} />
@@ -433,14 +465,14 @@ function SagForm({ onToast }) {
         {!declara && (
           <div style={{ background:C.successBg,border:`1px solid ${C.success}40`,borderRadius:8,padding:"10px 14px",
           fontSize:13,color:C.success,marginBottom:14 }}>
-             Si no marcas ningún producto, declaras que <strong>no transportas</strong> bienes restringidos.
+            ✅ Si no marcas ningún producto, declaras que <strong>no transportas</strong> bienes restringidos.
           </div>
         )}
         {estado === "loading" && <div style={{ marginBottom:12 }}><Spinner /></div>}
         {estado?.error && <div style={{ background:C.dangerBg,color:C.danger,padding:"10px 14px",
           borderRadius:8,fontSize:13,marginBottom:14 }}>⚠️ {estado.error}</div>}
         <button className="btn btn-primary" onClick={handleEnviar} disabled={estado==="loading"}>
-          {declara ? " Enviar declaración" : " Confirmar sin productos"}
+          {declara ? "📤 Enviar declaración" : "✅ Confirmar sin productos"}
         </button>
       </div>
     </div>
@@ -449,46 +481,48 @@ function SagForm({ onToast }) {
 
 // VISTA: AUTORIZACIÓN MENORES
 function MenoresForm({ onToast }) {
-  const [form, setForm] = useState({ nombreMenor: "",rutMenor: "",fechaNacimiento:"",rutAutorizante:"",vinculo:"",archivoNombre:null,archivoOk:false });
+  const [form, setForm] = useState({ nombreMenor:"",rutMenor:"",
+    fechaNacimiento:"",rutAutorizante:"",vinculo:"",archivoNombre:null,archivoOk:false });
   const [estado, setEstado] = useState(null);
   const f = (k,v) => setForm(p => ({...p,[k]:v}));
 
   const simularArchivo = () => {
-    f("archivoNombre","autorización_notarial.pdf");
+    f("archivoNombre","autorizacion_notarial.pdf");
     setTimeout(() => f("archivoOk",true), 1800);
   };
 
   const handleValidar = async () => {
-    if (!form.nombreMenor || !form.rutMenor || !form.rutAutorizante) { onToast("Completa todos los campos requeridos.","error"); return; }
-    if (!form.archivoOk) { onToast("Debes subir autorización notarial.","error"); return; }
+    if (!form.nombreMenor || !form.rutMenor || !form.rutAutorizante) { onToast("Completa todos los campos requeridos.", "error"); return; }
+    if (!form.archivoOk) { onToast("Debes subir la autorización notarial.", "error"); return; }
     setEstado("loading");
     try {
       const res = await mockApi.validarMenor();
       setEstado(res);
+      onToast("Autorización validada correctamente.", "success");
     } catch (e) {
       setEstado({ error: e.message });
-      onToast(e.message,"error");
+      onToast(e.message, "error");
     }
   };
 
   if (estado?.folio) return (
     <div className="fade">
       <div className="card" style={{ maxWidth:520,margin:"0 auto",textAlign:"center" }}>
-        <div style={{ fontSize:36,marginBottom:10 }}> APROVADO</div>
-        <div style={{ fontSize:17, fontWeight:600, marginBottom:6,color:C.success }}>Autorización validada</div>
+        <div style={{ fontSize:36,marginBottom:10 }}>✅</div>
+        <div style={{ fontSize:17,fontWeight:600,marginBottom:6,color:C.success }}>Autorización validada</div>
         <div style={{ fontSize:13,color:C.textSec,marginBottom:16 }}>El menor <strong>{form.nombreMenor}</strong> puede cruzar la frontera.</div>
         <div style={{ background:C.bg,borderRadius:8,padding:"10px 16px",display:"inline-block",marginBottom:20 }}>
-          <div style={{ fontSize:12, color:C.textMuted }}>Folio de autorización</div>
+          <div style={{ fontSize:12,color:C.textMuted }}>Folio de autorización</div>
           <div style={{ fontFamily:"monospace",fontSize:18,fontWeight:600,color:C.navy }}>{estado.folio}</div>
         </div>
         <div style={{ display:"flex",gap:10,justifyContent:"center" }}>
-          <button className="btn btn-primary btn-sm">⬇ Descargar</button>
+          <button className="btn btn-primary btn-sm">⬇️ Descargar</button>
           <button className="btn btn-sec btn-sm" onClick={() => setEstado(null)}>← Volver</button>
         </div>
       </div>
     </div>
   );
-  
+
   return (
     <div className="fade">
       <div className="stitle">👶 Autorización de Menores</div>
@@ -498,27 +532,24 @@ function MenoresForm({ onToast }) {
         <div className="g2">
           <div className="fgroup">
             <label className="flabel">Nombre completo *</label>
-            <input type="text" placeholder="Pedro Sánchez López" value={form.nombreMenor} 
-			onChange={e => f("nombreMenor",e.target.value)} />
+            <input type="text" placeholder="Pedro Sánchez López" value={form.nombreMenor} onChange={e => f("nombreMenor",e.target.value)} />
           </div>
           <div className="fgroup">
             <label className="flabel">RUT / Pasaporte *</label>
-            <input type="text" placeholder="22.333.444-5" value={form.rutMenor} 
-			onChange={e => f("rutMenor",e.target.value)} />
+            <input type="text" placeholder="22.333.444-5" value={form.rutMenor} onChange={e => f("rutMenor",e.target.value)} />
           </div>
           <div className="fgroup">
             <label className="flabel">Fecha de nacimiento</label>
-            <input type="date" value={form.fechaNacimiento} 
-			onChange={e => f("fechaNacimiento",e.target.value)} />
+            <input type="date" value={form.fechaNacimiento} onChange={e => f("fechaNacimiento",e.target.value)} />
           </div>
           <div className="fgroup">
             <label className="flabel">RUT autorizante *</label>
-            <input type="text" placeholder="12.345.678-9" value={form.rutAutorizante} 
-			onChange={e => f("rutAutorizante",e.target.value)} />
+            <input type="text" placeholder="12.345.678-9" value={form.rutAutorizante} onChange={e => f("rutAutorizante",e.target.value)} />
           </div>
           <div className="fgroup" style={{ gridColumn:"1/-1" }}>
             <label className="flabel">Vínculo con el menor</label>
-            <select value={form.vinculo} onChange={e => f("vinculo",e.target.value)}> <option value="">Selecciona...</option>
+            <select value={form.vinculo} onChange={e => f("vinculo",e.target.value)}>
+              <option value="">Selecciona...</option>
               <option>Padre/Madre</option>
               <option>Tutor legal</option>
               <option>Otro (indicar en documento)</option>
@@ -527,71 +558,67 @@ function MenoresForm({ onToast }) {
         </div>
         <div className="fgroup">
           <label className="flabel">Documento notarial *</label>
-          <div style={{ border:`2px dashed ${form.archivoOk?C.success:C.border}`,borderRadius:10,padding:18,
-		  textAlign:"center",background:form.archivoOk?C.successBg:C.bg,transition:"all 0.3s" }}>
+          <div style={{ border:`2px dashed ${form.archivoOk?C.success:C.border}`,
+          borderRadius:10,padding:18,textAlign:"center",background:form.archivoOk?C.successBg:C.bg,transition:"all 0.3s" }}>
             {form.archivoNombre ? (
               <div>
                 <div style={{ fontSize:13,fontWeight:500 }}>📎 {form.archivoNombre}</div>
                 {form.archivoOk
-                  ? <div style={{ color:C.success,fontSize:13,
-				  marginTop:4 }}> Timbre notarial validado por OCR</div>
-                  : <div className="pulse" style={{ color:C.warning,
-				  fontSize:13,marginTop:4 }}>🔍 Analizando documento...</div>}
+                  ? <div style={{ color:C.success,fontSize:13,marginTop:4 }}>✅ Timbre notarial validado por OCR</div>
+                  : <div className="pulse" style={{ color:C.warning,fontSize:13,marginTop:4 }}>🔍 Analizando documento...</div>}
               </div>
             ) : (
               <div>
-                <div style={{ fontSize:13,color:C.textSec,
-				marginBottom:8 }}>PDF, JPG o JPEG — máx 5MB</div>
-                <button className="btn btn-sec btn-sm" 
-				onClick={simularArchivo}>📎 Seleccionar archivo</button>
+                <div style={{ fontSize:13,color:C.textSec,marginBottom:8 }}>PDF, JPG o JPEG — máx 5MB</div>
+                <button className="btn btn-sec btn-sm" onClick={simularArchivo}>📎 Seleccionar archivo</button>
               </div>
             )}
           </div>
         </div>
         {estado === "loading" && <div style={{ marginBottom:12 }}><Spinner /></div>}
-        {estado?.error && <div style={{ background:C.dangerBg,color:C.danger,
-		padding:"10px 14px",borderRadius:8,fontSize:13,marginBottom:12 }}>  ADVERTENCIA {estado.error}</div>}
+        {estado?.error && <div style={{ background:C.dangerBg,color:C.danger,padding:"10px 14px",
+          borderRadius:8,fontSize:13,marginBottom:12 }}>⚠️ {estado.error}</div>}
         <button className="btn btn-primary" onClick={handleValidar} disabled={estado==="loading"}>Validar autorización</button>
       </div>
     </div>
   );
 }
 
+
 // VISTA: SALIDA VEHÍCULO
 function VehiculoSalida({ onToast }) {
-  const [form, setForm] = useState({ patente: "", marca: "", modelo: "",
-    anio:"", color:"", motor:"", chasis:"", propietario:"", rut:""});
+  const [form, setForm] = useState({ patente:"",marca:"",modelo:"",anio:"",color:"",motor:"",chasis:"",propietario:"",rut:"" });
   const [patenteOk, setPatenteOk] = useState(null);
   const [generado, setGenerado] = useState(false);
   const f = (k,v) => setForm(p=>({...p,[k]:v}));
 
   const validarPatente = (p) => {
     const ok = /^[A-Z]{2}\d{4}$|^[A-Z]{4}\d{2}$/i.test(p.replace(/\s|-/g,""));
-    setPatenteOk(ok); 
-    return ok;
+    setPatenteOk(ok); return ok;
   };
 
   const handleGenerar = () => {
-    if (!validarPatente(form.patente)) { onToast("Formato de patente inválido (ej: BB-CC-12)", "Error"); return;}
-    if (!form.marca||!form.modelo||!form.propietario) { onToast("Completa todos los campos obligatorios.", "Error"); return; }
-    setGenerado(true); onToast("Documento generado exitosamente.", "success");
+    if (!validarPatente(form.patente)) { onToast("Formato de patente inválido (ej: AB1234)","error"); return; }
+    if (!form.marca||!form.modelo||!form.propietario) { onToast("Completa todos los campos obligatorios.","error"); return; }
+    setGenerado(true); onToast("Documento generado exitosamente.","success");
   };
 
   if (generado) {
     const folio = Math.floor(100000+Math.random()*900000);
     return (
       <div className="fade">
-        <div className="card" style={{ maxWidth:600, margin:"0 auto"}}>
-          <div style={{ textAlign:"center", marginBottom:20}}>
-            <div style={{ fontSize:32, marginBottom:8}}> hola</div>
-            <div style={{ fontSize:16, fontWeight:600}}>Documento generado</div>
-            <div style={{ fontSize:13, color:C.textSec}}>Formulario de Salida y Admisión Temporal de Vehículos</div>
+        <div className="card" style={{ maxWidth:600,margin:"0 auto" }}>
+          <div style={{ textAlign:"center",marginBottom:20 }}>
+            <div style={{ fontSize:32,marginBottom:8 }}>📄</div>
+            <div style={{ fontSize:16,fontWeight:600 }}>Documento generado</div>
+            <div style={{ fontSize:13,color:C.textSec }}>Formulario de Salida y Admisión Temporal de Vehículos</div>
           </div>
-          <div style={{ border:`2px solid ${C.navy}`, borderRadius:10, padding:20, marginBottom:16}}>
-            <div style={{ display:"flex", justifyContent:"space-between",alignItems:"center",marginBottom:12, paddingBottom:10, borderBottom:`1px solid ${C.border}`}}>
+          <div style={{ border:`2px solid ${C.navy}`,borderRadius:10,padding:20,marginBottom:16 }}>
+            <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
+              marginBottom:12,paddingBottom:10,borderBottom:`1px solid ${C.border}` }}>
               <div>
-                <div style={{ fontFamily:" 'Source Serif 4', serif", fontSize:15, fontWeight:600, color:C.navy }}>SERVICIO NACIONAL DE ADUANAS</div>
-                <div style={{ fontSize:12,color:C.textSec }}>Formulario: Salida y Adminisión temporal de vehículos</div>
+                <div style={{ fontFamily:"'Source Serif 4',serif",fontSize:15,fontWeight:600,color:C.navy }}>SERVICIO NACIONAL DE ADUANAS</div>
+                <div style={{ fontSize:12,color:C.textSec }}>Formulario: Salida y Admisión Temporal de Vehículos</div>
               </div>
               <div style={{ fontSize:11,color:C.textMuted,textAlign:"right" }}>N° {folio}<br />Válido: 180 días</div>
             </div>
@@ -603,37 +630,37 @@ function VehiculoSalida({ onToast }) {
               <div><strong>Propietario:</strong> {form.propietario}</div>
               <div><strong>RUT:</strong> {form.rut}</div>
             </div>
-            <div style={{ marginTop:12, fontSize:11, color:C.textMuted, display:"flex", justifyContent:"space-between" }}>
-              <div>COPIA ORIGINAL — Pare presentar en Aduanas Argentina</div>
+            <div style={{ marginTop:12,fontSize:11,color:C.textMuted,display:"flex",justifyContent:"space-between" }}>
+              <div>COPIA ORIGINAL — Para presentar en Aduana Argentina</div>
               <div>Fecha: {new Date().toLocaleDateString("es-CL")}</div>
             </div>
           </div>
-          <div style={{ display:"flex",gap:10}}>
-            <button className="btn btn-primary btn-sm"> Descargar PDF</button>
-            <button className="btn btn-sec btn-sm" onClick={() => setGenerado(false)}> Volver</button>
+          <div style={{ display:"flex",gap:10 }}>
+            <button className="btn btn-primary btn-sm">⬇️ Descargar PDF</button>
+            <button className="btn btn-sec btn-sm" onClick={() => setGenerado(false)}>← Volver</button>
           </div>
         </div>
       </div>
     );
   }
 
- return (
+  return (
     <div className="fade">
-      <div className="stitle"> Formulario Salida de Vehículo</div>
+      <div className="stitle">🚗 Formulario Salida de Vehículo</div>
       <div className="ssub">Genera el documento "Salida y Admisión Temporal de Vehículos" para cruzar a Argentina</div>
       <div className="card">
         <div className="g2">
-          {[["patente","Patente *","AB1234"],["marca","Marca *","Toyota"],["modelo","Modelo *",
-		  "Corolla"],["anio","Año","2022"],["color","Color","Blanco"],["motor","N° Motor","123456789"],
-		  ["chasis","N° Chasis (VIN)","JT2BF22K000001"],["propietario","Propietario *","Nombre completo"],
-		  ["rut","RUT propietario *","12.345.678-9"]].map(([k,lbl,ph]) => (
+          {[["patente","Patente *","AB1234"],["marca","Marca *","Toyota"],["modelo","Modelo *","Corolla"],
+          ["anio","Año","2022"],["color","Color","Blanco"],["motor","N° Motor","123456789"],["chasis","N° Chasis (VIN)","JT2BF22K000001"],["propietario","Propietario *","Nombre completo"],["rut","RUT propietario *","12.345.678-9"]].map(([k,lbl,ph]) => (
             <div key={k} className="fgroup">
               <label className="flabel">{lbl}</label>
               {k==="patente" ? (
                 <div style={{ position:"relative" }}>
-                  <input type="text" placeholder={ph} value={form[k]} onChange={e=>{f(k,e.target.value);setPatenteOk(null);}} 
-                  onBlur={()=>form.patente&&validarPatente(form.patente)} style={{ borderColor:patenteOk===false?C.danger:patenteOk===true?C.success:undefined }} />
-                  {patenteOk!==null&&<span style={{ position:"absolute",right:10,top:"50%",transform:"translateY(-50%)" }}>{patenteOk?"✅":"❌"}</span>}
+                  <input type="text" placeholder={ph} value={form[k]} 
+                  onChange={e=>{f(k,e.target.value);setPatenteOk(null);}} onBlur={()=>form.patente&&validarPatente(form.patente)} 
+                  style={{ borderColor:patenteOk===false?C.danger:patenteOk===true?C.success:undefined }} />
+                  {patenteOk!==null&&<span style={{ position:"absolute",
+                    right:10,top:"50%",transform:"translateY(-50%)" }}>{patenteOk?"✅":"❌"}</span>}
                 </div>
               ) : (
                 <input type="text" placeholder={ph} value={form[k]} onChange={e=>f(k,e.target.value)} />
@@ -641,7 +668,7 @@ function VehiculoSalida({ onToast }) {
             </div>
           ))}
         </div>
-        <button className="btn btn-primary" onClick={handleGenerar}> Generar documento PDF</button>
+        <button className="btn btn-primary" onClick={handleGenerar}>📄 Generar documento PDF</button>
       </div>
     </div>
   );
@@ -683,6 +710,74 @@ function FuncionarioPanel({ user, onNav }) {
       <div style={{ display:"flex",gap:12,marginTop:20 }}>
         <button className="btn btn-primary btn-sm" onClick={()=>onNav("vehiculo_ingreso")}>🚙 Registrar Ingreso Vehículo</button>
         <button className="btn btn-sec btn-sm" onClick={()=>onNav("pdi")}>🔍 Consulta PDI</button>
+      </div>
+    </div>
+  );
+}
+
+
+// VISTA: INGRESO VEHÍCULOS (Funcionario)
+function VehiculoIngreso({ onToast }) {
+  const [folio, setFolio] = useState("");
+  const [estado, setEstado] = useState(null);
+
+  const handleScan = async () => {
+    if (!folio) { onToast("Ingresa el folio o escanea el código.","error"); return; }
+    setEstado("loading");
+    try {
+      const res = await mockApi.consultarAduanaArg();
+      const fechaLimite = new Date(); fechaLimite.setDate(fechaLimite.getDate()+180);
+      setEstado({ ok:true, ...res, patente:"ARG-"+folio.slice(-4).toUpperCase(), pais:"Argentina", fechaLimite:fechaLimite.toLocaleDateString("es-CL") });
+      onToast("Vehículo validado. Ingreso autorizado.","success");
+    } catch(e) {
+      setEstado({ ok:false, error:e.message });
+      onToast(e.message,"error");
+    }
+  };
+
+  return (
+    <div className="fade">
+      <div className="stitle">🚙 Registro Ingreso Vehículos Extranjeros</div>
+      <div className="ssub">Valida el documento de admisión temporal emitido por Aduana Argentina</div>
+      <div className="card" style={{ maxWidth:580 }}>
+        <div className="fgroup">
+          <label className="flabel">Folio / Código del documento argentino</label>
+          <div style={{ display:"flex",gap:10 }}>
+            <input type="text" placeholder="ARG-2024-XK9..." value={folio} onChange={e=>setFolio(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleScan()} />
+            <button className="btn btn-primary" onClick={handleScan} disabled={estado==="loading"} style={{ flexShrink:0 }}>
+              {estado==="loading"?"⏳...":"🔍 Validar"}
+            </button>
+          </div>
+        </div>
+        {estado==="loading" && <div className="pulse" style={{ color:C.textSec,fontSize:13,marginTop:8 }}>🔗 Consultando Aduana Argentina (Horcones)...</div>}
+        {estado?.ok && (
+          <div className="fade">
+            <div style={{ background:C.successBg,border:`1px solid ${C.success}40`,borderRadius:10,padding:16,marginBottom:14 }}>
+              <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:10 }}>
+                <span className="semaforo s-verde" />
+                <strong style={{ color:C.success }}>Documento válido — Ingreso autorizado</strong>
+              </div>
+              <div className="g2" style={{ fontSize:13 }}>
+                <div><strong>Patente:</strong> {estado.patente}</div>
+                <div><strong>Titular:</strong> {estado.titular}</div>
+                <div><strong>Modelo:</strong> {estado.modelo}</div>
+                <div><strong>Días restantes:</strong> <span style={{ color:C.success,fontWeight:500 }}>{estado.diasRestantes} días</span></div>
+                <div><strong>País:</strong> {estado.pais}</div>
+                <div><strong>Plazo límite:</strong> <span style={{ color:C.warning,fontWeight:500 }}>{estado.fechaLimite}</span></div>
+              </div>
+            </div>
+            <button className="btn btn-success btn-sm">✅ Registrar ingreso</button>
+          </div>
+        )}
+        {estado?.error && (
+          <div style={{ background:C.dangerBg,border:`1px solid ${C.danger}40`,borderRadius:10,padding:14,marginTop:10 }}>
+            <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:6 }}>
+              <span className="semaforo s-rojo" />
+              <strong style={{ color:C.danger }}>Error de validación</strong>
+            </div>
+            <div style={{ fontSize:13,color:C.danger }}>{estado.error}</div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -749,81 +844,10 @@ function PDIControl({ onToast }) {
   );
 }
 
-// VISTA: INGRESO VEHÍCULOS (Funcionario)
-function VehiculoIngreso({ onToast }) {
-  const [folio, setFolio] = useState("");
-  const [estado, setEstado] = useState(null);
-
-  const handleScan = async () => {
-    if (!folio) { onToast("Ingresa el folio o escanea el código.","error"); return; }
-    setEstado("loading");
-    try {
-      const res = await mockApi.consultarAduanaArg();
-      const fechaLimite = new Date(); fechaLimite.setDate(fechaLimite.getDate()+180);
-      setEstado({ ok:true, ...res, patente:"ARG-"+folio.slice(-4).toUpperCase(), pais:"Argentina", 
-        fechaLimite:fechaLimite.toLocaleDateString("es-CL") });
-      onToast("Vehículo validado. Ingreso autorizado.","success");
-    } catch(e) {
-      setEstado({ ok:false, error:e.message });
-      onToast(e.message,"error");
-    }
-  };
-
-  return (
-    <div className="fade">
-      <div className="stitle">🚙 Registro Ingreso Vehículos Extranjeros</div>
-      <div className="ssub">Valida el documento de admisión temporal emitido por Aduana Argentina</div>
-      <div className="card" style={{ maxWidth:580 }}>
-        <div className="fgroup">
-          <label className="flabel">Folio / Código del documento argentino</label>
-          <div style={{ display:"flex",gap:10 }}>
-            <input type="text" placeholder="ARG-2024-XK9..." value={folio} onChange={e=>setFolio(e.target.value)} 
-            onKeyDown={e=>e.key==="Enter"&&handleScan()} />
-            <button className="btn btn-primary" onClick={handleScan} disabled={estado==="loading"} style={{ flexShrink:0 }}>
-              {estado==="loading"?"⏳...":"🔍 Validar"}
-            </button>
-          </div>
-        </div>
-        {estado==="loading" && <div className="pulse" style={{ color:C.textSec,
-          fontSize:13,marginTop:8 }}>🔗 Consultando Aduana Argentina (Horcones)...</div>}
-        {estado?.ok && (
-          <div className="fade">
-            <div style={{ background:C.successBg,border:`1px solid ${C.success}40`,borderRadius:10,padding:16,marginBottom:14 }}>
-              <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:10 }}>
-                <span className="semaforo s-verde" />
-                <strong style={{ color:C.success }}>Documento válido — Ingreso autorizado</strong>
-              </div>
-              <div className="g2" style={{ fontSize:13 }}>
-                <div><strong>Patente:</strong> {estado.patente}</div>
-                <div><strong>Titular:</strong> {estado.titular}</div>
-                <div><strong>Modelo:</strong> {estado.modelo}</div>
-                <div><strong>Días restantes:</strong> <span style={{ color:C.success,fontWeight:500 }}>{estado.diasRestantes} días</span></div>
-                <div><strong>País:</strong> {estado.pais}</div>
-                <div><strong>Plazo límite:</strong> <span style={{ color:C.warning,fontWeight:500 }}>{estado.fechaLimite}</span></div>
-              </div>
-            </div>
-            <button className="btn btn-success btn-sm">✅ Registrar ingreso</button>
-          </div>
-        )}
-        {estado?.error && (
-          <div style={{ background:C.dangerBg,border:`1px solid ${C.danger}40`,borderRadius:10,padding:14,marginTop:10 }}>
-            <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:6 }}>
-              <span className="semaforo s-rojo" />
-              <strong style={{ color:C.danger }}>Error de validación</strong>
-            </div>
-            <div style={{ fontSize:13,color:C.danger }}>{estado.error}</div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // VISTA: ADMIN — DASHBOARD
 function AdminDashboard({ onNav }) {
   const now = new Date();
-  const flujo = Array.from({length:12},(_,i) => ({ hora:`${7+i}:00`,ing:Math.floor(30+Math.random()*80),
-  sal:Math.floor(20+Math.random()*70) }));
+  const flujo = Array.from({length:12},(_,i) => ({ hora:`${7+i}:00`,ing:Math.floor(30+Math.random()*80),sal:Math.floor(20+Math.random()*70) }));
   const maxV = Math.max(...flujo.map(h=>h.ing+h.sal));
 
   return (
@@ -831,8 +855,7 @@ function AdminDashboard({ onNav }) {
       <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20 }}>
         <div>
           <div className="stitle">📊 Dashboard — Paso Los Libertadores</div>
-          <div className="ssub">{now.toLocaleDateString("es-CL",{weekday:"long",
-		  year:"numeric",month:"long",day:"numeric"})}</div>
+          <div className="ssub">{now.toLocaleDateString("es-CL",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</div>
         </div>
         <span className="badge b-green pulse">🟢 Sistema operativo</span>
       </div>
@@ -846,20 +869,16 @@ function AdminDashboard({ onNav }) {
         <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14 }}>
           <div style={{ fontWeight:600 }}>Flujo en tiempo real — Hoy</div>
           <div style={{ display:"flex",gap:12,fontSize:12 }}>
-            <span style={{ display:"flex",alignItems:"center",gap:5 }}><span style={{ width:12,height:12,
-              background:C.navy,borderRadius:2,display:"inline-block" }}/>Ingresos</span>
-            <span style={{ display:"flex",alignItems:"center",gap:5 }}><span style={{ width:12,height:12,
-              background:C.gold,borderRadius:2,display:"inline-block" }}/>Salidas</span>
+            <span style={{ display:"flex",alignItems:"center",gap:5 }}><span style={{ width:12,height:12,background:C.navy,borderRadius:2,display:"inline-block" }}/>Ingresos</span>
+            <span style={{ display:"flex",alignItems:"center",gap:5 }}><span style={{ width:12,height:12,background:C.gold,borderRadius:2,display:"inline-block" }}/>Salidas</span>
           </div>
         </div>
         <div style={{ display:"flex",alignItems:"flex-end",gap:3,height:130,overflowX:"auto" }}>
           {flujo.map((h,i) => (
             <div key={i} style={{ flex:1,minWidth:32,display:"flex",flexDirection:"column",alignItems:"center",gap:2 }}>
               <div style={{ width:"90%",display:"flex",flexDirection:"column",alignItems:"center",gap:1 }}>
-                <div style={{ width:"100%",height:Math.round(h.ing/maxV*100),
-				background:C.navy,borderRadius:"3px 3px 0 0",minHeight:3 }} />
-                <div style={{ width:"100%",height:Math.round(h.sal/maxV*100),
-				background:C.gold,borderRadius:"0 0 3px 3px",minHeight:3 }} />
+                <div style={{ width:"100%",height:Math.round(h.ing/maxV*100),background:C.navy,borderRadius:"3px 3px 0 0",minHeight:3 }} />
+                <div style={{ width:"100%",height:Math.round(h.sal/maxV*100),background:C.gold,borderRadius:"0 0 3px 3px",minHeight:3 }} />
               </div>
               <div style={{ fontSize:10,color:C.textMuted,marginTop:2 }}>{h.hora}</div>
             </div>
@@ -882,11 +901,9 @@ function AdminDashboard({ onNav }) {
         <div className="card">
           <div style={{ fontWeight:600,marginBottom:12 }}>Estado de integraciones</div>
           {[["API PDI","Activo",true],["API SAG","Activo",true],["Aduana Argentina","Activo",true],
-		  ["Sistema de Reportes","Activo",true],["Escáner Ventanilla 4","Fuera de línea",false]].
-		  map(([n,s,ok],i)=>(
-            <div key={i} style={{ display:"flex",justifyContent:"space-between",
-			alignItems:"center",padding:"7px 0",borderBottom:i<4?`1px solid ${C.border}`:"none",
-			fontSize:13 }}>
+          ["Sistema de Reportes","Activo",true],["Escáner Ventanilla 4","Fuera de línea",false]].map(([n,s,ok],i)=>(
+            <div key={i} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
+            padding:"7px 0",borderBottom:i<4?`1px solid ${C.border}`:"none",fontSize:13 }}>
               <span>{n}</span>
               <span className={`badge ${ok?"b-green":"b-red"}`}>{ok?"🟢":"🔴"} {s}</span>
             </div>
@@ -920,33 +937,38 @@ export default function App() {
   const [solicitudes, setSolicitudes] = useState(SOLICITUDES_INIT);
   const [auditLogs] = useState(AUDIT_INIT);
 
-  const showToast = (msg, type = "info") => setToast({ msg, type });
+  const showToast = (msg, type="info") => setToast({ msg, type });
 
   const handleLogin = (u) => {
     setUser(u);
-    const defaultView = { pasajero: "pasajero", funcionario: "funcionario", admin: "admin", pdi: "pdi" };
+    const defaultView = { pasajero:"pasajero", funcionario:"funcionario", admin:"admin", pdi:"pdi" };
     setView(defaultView[u.role] || "pasajero");
   };
 
   const handleLogout = () => { setUser(null); setView(null); };
 
-  // Las vistas estan con mayusculas al principio, por si no se ven ve si en el function empieza con mayuscula :p
   const renderView = () => {
-    switch (view) {
-      case "pasajero": return <PasajeroHome user={user} onNav={setView} />;
-      case "sag": return <SagForm onToast={showToast} />;
-      case "menores": return <MenoresForm onToast={showToast} />;
+    // RBAC: verifica que el rol activo tenga permiso real para esta vista,
+    // sin depender únicamente de que el menú la oculte.
+    const permitido = ACCESO_PERMITIDO[user.role] || [];
+    if (!permitido.includes(view)) {
+      return <AccesoDenegado view={view} role={user.role} />;
+    }
+    switch(view) {
+      case "pasajero":        return <PasajeroHome user={user} onNav={setView} />;
+      case "sag":             return <SagForm onToast={showToast} />;
+      case "menores":         return <MenoresForm onToast={showToast} />;
       case "vehiculo_salida": return <VehiculoSalida onToast={showToast} />;
-      case "funcionario": return <FuncionarioPanel user={user} onNav={setView} />;
-      case "vehiculo_ingreso": return <VehiculoIngreso onToast={showToast} />;
-      case "pdi": return <PDIControl onToast={showToast} />;
-      case "admin": return <AdminDashboard onNav={setView} />;
-      case "solicitudes": return <SolicitudesView solicitudes={solicitudes} setSolicitudes={setSolicitudes} onToast={showToast} />;
-      case "usuarios": return <GestionUsuarios usuarios={usuarios} setUsuarios={setUsuarios} onToast={showToast} />;
-      case "auditoria": return <AuditoriaView logs={auditLogs} />;
-      case "reportes": return <ReportesView onToast={showToast} />;
-      case "ayuda": return <AyudaView />;
-      default: return <div style={{ padding: 20, color: C.textSec }}>Vista no encontrada.</div>;
+      case "funcionario":     return <FuncionarioPanel user={user} onNav={setView} />;
+      case "vehiculo_ingreso":return <VehiculoIngreso onToast={showToast} />;
+      case "pdi":             return <PDIControl onToast={showToast} />;
+      case "admin":           return <AdminDashboard onNav={setView} />;
+      case "solicitudes":     return <SolicitudesView solicitudes={solicitudes} setSolicitudes={setSolicitudes} onToast={showToast} />;
+      case "usuarios":        return <GestionUsuarios usuarios={usuarios} setUsuarios={setUsuarios} onToast={showToast} />;
+      case "auditoria":       return <AuditoriaView logs={auditLogs} />;
+      case "reportes":        return <ReportesView onToast={showToast} />;
+      case "ayuda":           return <AyudaView />;
+      default:                return <div style={{ padding:20,color:C.textSec }}>Vista no encontrada.</div>;
     }
   };
 
