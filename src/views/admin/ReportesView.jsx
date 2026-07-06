@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { C } from "../../theme.js";
 import { StatCard } from "../../components/common/StatCard.jsx";
+import { generarPdfReporte, generarCsvReporte } from "../../utils/pdfGenerator.js";
 
 export function ReportesView({ onToast }) {
   const [tipo, setTipo] = useState("flujo");
@@ -41,10 +42,15 @@ export function ReportesView({ onToast }) {
   };
 
   const exportar = (formato) => {
+    if (!reporteGenerado) return;
+    const { tipo, data, desde, hasta } = reporteGenerado;
     onToast(`Exportando reporte en formato ${formato.toUpperCase()}...`, "info");
-    setTimeout(() => {
-      onToast("Reporte descargado (simulación).", "success");
-    }, 800);
+    if (formato === "pdf") {
+      generarPdfReporte(tipo, data, desde, hasta);
+    } else if (formato === "csv") {
+      generarCsvReporte(tipo, data, desde, hasta);
+    }
+    onToast("Reporte descargado.", "success");
   };
 
   const renderResultados = () => {
