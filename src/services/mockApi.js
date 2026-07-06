@@ -36,7 +36,7 @@ export const mockApi = {
       await _delay();
       const alerta = Math.random() > 0.82;
       return {
-        nombre: rut === "12345678-9" ? "Juan Carlos Bodoque" : "Zacarías Flores del Campo",
+        nombre: rut === "12345678-9" ? "María González" : "Sebastián Aravena Muñoz",
         alerta,
         habilitado: !alerta,
         mensaje: alerta ? "ALERTA: Orden de arraigo nacional activo." : "Sin arraigo nacional ni órdenes vigentes.",
@@ -46,6 +46,6 @@ export const mockApi = {
   consultarAduanaArg: async () =>
     _medir(async () => {
       await _delay();
-      return { habilitado: true, diasRestantes: 180, titular: "Alan Brito", modelo: "Toyota Hilux 2022" };
+      return { habilitado: true, diasRestantes: 180, titular: "Carlos Rodríguez", modelo: "Toyota Hilux 2022" };
     }),
 };

@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { C } from "../../theme.js";
+import { generarPdfVehiculoSalida } from "../../utils/pdfGenerator.js";
 
 export function VehiculoSalida({ onToast }) {
   const [form, setForm] = useState({ patente: "", marca: "", modelo: "", anio: "", color: "", motor: "", chasis: "", propietario: "", rut: "" });
   const [patenteOk, setPatenteOk] = useState(null);
   const [generado, setGenerado] = useState(false);
+  const [folio, setFolio] = useState(null);
   const f = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
   const validarPatente = (p) => {
@@ -15,11 +17,16 @@ export function VehiculoSalida({ onToast }) {
   const handleGenerar = () => {
     if (!validarPatente(form.patente)) { onToast("Formato de patente inválido (ej: AB1234)", "error"); return; }
     if (!form.marca || !form.modelo || !form.propietario) { onToast("Completa todos los campos obligatorios.", "error"); return; }
+    setFolio(Math.floor(100000 + Math.random() * 900000));
     setGenerado(true); onToast("Documento generado exitosamente.", "success");
   };
 
+  const handleDescargar = () => {
+    generarPdfVehiculoSalida(form, folio);
+    onToast("Descargando documento PDF...", "success");
+  };
+
   if (generado) {
-    const folio = Math.floor(100000 + Math.random() * 900000);
     return (
       <div className="fade">
         <div className="card" style={{ maxWidth: 600, margin: "0 auto" }}>
@@ -53,7 +60,7 @@ export function VehiculoSalida({ onToast }) {
             </div>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            <button className="btn btn-primary btn-sm">⬇️ Descargar PDF</button>
+            <button className="btn btn-primary btn-sm" onClick={handleDescargar}>⬇️ Descargar PDF</button>
             <button className="btn btn-sec btn-sm" onClick={() => setGenerado(false)}>← Volver</button>
           </div>
         </div>

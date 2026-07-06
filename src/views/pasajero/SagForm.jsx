@@ -3,6 +3,7 @@ import { C } from "../../theme.js";
 import { mockApi } from "../../services/mockApi.js";
 import { Spinner } from "../../components/common/Spinner.jsx";
 import { TiempoRespuesta } from "../../components/common/TiempoRespuesta.jsx";
+import { generarPdfComprobanteSag } from "../../utils/pdfGenerator.js";
 
 export function SagForm({ onToast }) {
   const [form, setForm] = useState({ frutas: false, carnes: false, lacteos: false, mascotas: false, semillas: false, otro: false, descripcion: "" });
@@ -23,6 +24,11 @@ export function SagForm({ onToast }) {
 
   const check = (k) => setForm(f => ({ ...f, [k]: !f[k] }));
 
+  const handleDescargarComprobante = () => {
+    generarPdfComprobanteSag(estado, form);
+    onToast("Descargando comprobante PDF...", "success");
+  };
+
   if (estado && estado.folio) return (
     <div className="fade">
       <div className="card" style={{ maxWidth: 560, margin: "0 auto", textAlign: "center" }}>
@@ -37,7 +43,7 @@ export function SagForm({ onToast }) {
         </div>
         <div style={{ marginBottom: 16 }}><TiempoRespuesta ms={estado._tiempoMs} /></div>
         <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-          <button className="btn btn-primary btn-sm">⬇️ Descargar comprobante</button>
+          <button className="btn btn-primary btn-sm" onClick={handleDescargarComprobante}>⬇️ Descargar comprobante</button>
           <button className="btn btn-sec btn-sm" onClick={() => setEstado(null)}>← Volver</button>
         </div>
       </div>
