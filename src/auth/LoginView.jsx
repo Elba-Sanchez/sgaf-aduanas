@@ -40,10 +40,10 @@ export function LoginView({ onLogin }) {
           </div>
           <div className="fgroup">
             <label className="flabel">RUT / Pasaporte</label>
-            <input type="text" placeholder="ej. 12345678-9 o admin" value={doc} onChange={e => setDoc(e.target.value)} />
+            <input type="text" placeholder="ej. 12345678-9" value={doc} onChange={e => setDoc(e.target.value)} />
           </div>
           <div className="fgroup">
-            <label className="flabel">Contraseña</label>
+            <label className="flabel">Clave Única / contraseña</label>
             <input type="password" placeholder="••••••••" value={pass} onChange={e => setPass(e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleLogin()} />
           </div>
