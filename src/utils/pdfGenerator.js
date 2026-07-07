@@ -1,5 +1,6 @@
 // pdfGenerator.js — Generación real de documentos PDF (reemplaza la descarga simulada)
 import { jsPDF } from "jspdf";
+import { codificarQrVehiculo, codificarQrSag, generarQrDataUrl } from "./qr.js";
 
 const NAVY = [17, 43, 76];
 const GOLD = [176, 141, 87];
@@ -48,7 +49,7 @@ function campo(doc, label, valor, x, y, ancho = 85) {
 /**
  * Documento: Salida y Admisión Temporal de Vehículos
  */
-export function generarPdfVehiculoSalida(form, folio) {
+export async function generarPdfVehiculoSalida(form, folio) {
   const doc = new jsPDF();
   encabezado(doc, "Formulario: Salida y Admisión Temporal de Vehículos");
 
@@ -87,6 +88,20 @@ export function generarPdfVehiculoSalida(form, folio) {
   doc.text("COPIA ORIGINAL — Para presentar en Aduana Argentina", 24, y);
   doc.text(`Fecha: ${new Date().toLocaleDateString("es-CL")}`, 186, y, { align: "right" });
 
+  y += 12;
+  try {
+    const qrSize = 55;
+    const qrX = (210 - qrSize) / 2;
+    const qrDataUrl = await generarQrDataUrl(codificarQrVehiculo(form, folio));
+    doc.addImage(qrDataUrl, "PNG", qrX, y, qrSize, qrSize);
+    doc.setFontSize(8);
+    doc.setTextColor(...TEXT_SEC);
+    doc.text("Escanee este código en el control fronterizo", 105, y + qrSize + 6, { align: "center" });
+    doc.text("para validar la autenticidad del documento.", 105, y + qrSize + 11, { align: "center" });
+  } catch (e) {
+    console.error("Error generando QR:", e);
+  }
+
   pie(doc, folio);
   doc.save(`salida-vehiculo-${folio}.pdf`);
 }
@@ -94,7 +109,7 @@ export function generarPdfVehiculoSalida(form, folio) {
 /**
  * Comprobante: Declaración SAG
  */
-export function generarPdfComprobanteSag(estado, form) {
+export async function generarPdfComprobanteSag(estado, form) {
   const doc = new jsPDF();
   encabezado(doc, "Comprobante de Declaración SAG");
 
@@ -148,6 +163,22 @@ export function generarPdfComprobanteSag(estado, form) {
     y += 6;
     doc.setFont("helvetica", "normal");
     doc.text(doc.splitTextToSize(form.descripcion, 180), 14, y);
+    y += 6;
+  }
+
+  y += 12;
+  if (y > 205) y = 205; // evita que el QR se corra fuera de la página si hay mucho texto arriba
+  try {
+    const qrSize = 55;
+    const qrX = (210 - qrSize) / 2;
+    const qrDataUrl = await generarQrDataUrl(codificarQrSag(estado, form));
+    doc.addImage(qrDataUrl, "PNG", qrX, y, qrSize, qrSize);
+    doc.setFontSize(8);
+    doc.setTextColor(...TEXT_SEC);
+    doc.text("Escanee este código en el control fronterizo", 105, y + qrSize + 6, { align: "center" });
+    doc.text("para validar la autenticidad del documento.", 105, y + qrSize + 11, { align: "center" });
+  } catch (e) {
+    console.error("Error generando QR:", e);
   }
 
   pie(doc, estado.folio);

@@ -21,8 +21,9 @@ export function VehiculoSalida({ onToast }) {
     setGenerado(true); onToast("Documento generado exitosamente.", "success");
   };
 
-  const handleDescargar = () => {
-    generarPdfVehiculoSalida(form, folio);
+  const handleDescargar = async () => {
+    onToast("Generando documento con código QR...", "info");
+    await generarPdfVehiculoSalida(form, folio);
     onToast("Descargando documento PDF...", "success");
   };
 

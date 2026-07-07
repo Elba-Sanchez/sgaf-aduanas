@@ -11,6 +11,7 @@ import { FuncionarioPanel } from "./views/funcionario/FuncionarioPanel.jsx";
 import { VehiculoIngreso } from "./views/funcionario/VehiculoIngreso.jsx";
 
 import { PDIControl } from "./views/shared/PDIControl.jsx";
+import { LectorControl } from "./views/shared/LectorControl.jsx";
 import { AyudaView } from "./views/shared/AyudaView.jsx";
 
 import { AdminDashboard } from "./views/admin/AdminDashboard.jsx";
@@ -39,6 +40,7 @@ export function ViewRouter({ view, user, onNav, onToast, appState }) {
     case "funcionario": return <FuncionarioPanel user={user} onNav={onNav} />;
     case "vehiculo_ingreso": return <VehiculoIngreso onToast={onToast} />;
     case "pdi": return <PDIControl onToast={onToast} />;
+    case "lector": return <LectorControl onToast={onToast} />;
 
     case "admin": return <AdminDashboard onNav={onNav} />;
     case "solicitudes": return <SolicitudesView solicitudes={solicitudes} setSolicitudes={setSolicitudes} onToast={onToast} />;

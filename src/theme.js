@@ -66,6 +66,7 @@ export const CSS = `
   .semaforo{width:18px;height:18px;border-radius:50%;display:inline-block;}
   .s-verde{background:#22C55E;box-shadow:0 0 7px #22C55E88;}
   .s-rojo{background:#EF4444;box-shadow:0 0 7px #EF444488;}
+  .s-amarillo{background:#F59E0B;box-shadow:0 0 7px #F59E0B88;}
   table{width:100%;border-collapse:collapse;font-size:13px;}
   th{padding:9px 12px;text-align:left;font-weight:600;color:${C.textSec};border-bottom:1px solid ${C.border};background:${C.bg};}
   td{padding:9px 12px;border-bottom:1px solid ${C.border};}
