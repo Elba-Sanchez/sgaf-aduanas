@@ -37,11 +37,12 @@ export const AUDIT_INIT = [
   { id: 4, timestamp: "2026-06-04 12:10:04", usuario: "fsalazar@aduana.cl", accion: "Ingreso Vehículo Argentino Patente: AC992LL" },
 ];
 
-// Cuentas demo — cada una corresponde a alguien que ya existe en los datos
-// mockeados (SOLICITUDES_INIT / USUARIOS_INIT), para que al iniciar sesión
-// la persona vea reflejada su propia información en las demás vistas.
-// Por defecto para pruebas rápidas se usa 12345678-9 (María González).
-// TODO: eliminar/reemplazar por autenticación real antes de producción.
+/* Cuentas demo — cada una corresponde a alguien que ya existe en los datos
+  mockeados (SOLICITUDES_INIT / USUARIOS_INIT), para que al iniciar sesión
+  la persona vea reflejada su propia información en las demás vistas.
+  Por defecto para pruebas rápidas se usa 12345678-9
+*/ 
+
 export const USERS_LOGIN = {
   // --- Pasajeros ---
   "12345678-9": { pass: "pasajero123", role: "pasajero", name: "María González" }, // cuenta demo por defecto

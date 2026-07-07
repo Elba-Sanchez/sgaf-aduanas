@@ -2,9 +2,9 @@
 
 export const ACCESO_PERMITIDO = {
   pasajero: ["pasajero", "sag", "menores", "vehiculo_salida", "ayuda"],
-  funcionario: ["funcionario", "vehiculo_ingreso", "pdi"],
-  admin: ["admin", "solicitudes", "usuarios", "auditoria", "reportes"],
-  pdi: ["pdi"],
+  funcionario: ["funcionario", "vehiculo_ingreso", "pdi", "lector"],
+  admin: ["admin", "solicitudes", "usuarios", "auditoria", "reportes", "lector"],
+  pdi: ["pdi", "lector"],
 };
 
 export const DEFAULT_VIEW_BY_ROLE = {

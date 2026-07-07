@@ -24,8 +24,9 @@ export function SagForm({ onToast }) {
 
   const check = (k) => setForm(f => ({ ...f, [k]: !f[k] }));
 
-  const handleDescargarComprobante = () => {
-    generarPdfComprobanteSag(estado, form);
+  const handleDescargarComprobante = async () => {
+    onToast("Generando comprobante con código QR...", "info");
+    await generarPdfComprobanteSag(estado, form);
     onToast("Descargando comprobante PDF...", "success");
   };
 

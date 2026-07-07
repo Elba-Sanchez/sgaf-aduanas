@@ -12,6 +12,7 @@ const NAV_MAP = {
     { id: "funcionario", icon: "🖥️", label: "Panel Control" },
     { id: "vehiculo_ingreso", icon: "🚙", label: "Ingreso Vehículos" },
     { id: "pdi", icon: "🔍", label: "Control PDI" },
+    { id: "lector", icon: "🔦", label: "Lector de Documentos" },
   ],
   admin: [
     { id: "admin", icon: "📊", label: "Dashboard" },
@@ -19,8 +20,12 @@ const NAV_MAP = {
     { id: "usuarios", icon: "👥", label: "Gestión Usuarios" },
     { id: "auditoria", icon: "🔐", label: "Auditoría" },
     { id: "reportes", icon: "📈", label: "Reportes" },
+    { id: "lector", icon: "🔦", label: "Lector de Documentos" },
   ],
-  pdi: [{ id: "pdi", icon: "🔍", label: "Control PDI" }],
+  pdi: [
+    { id: "pdi", icon: "🔍", label: "Control PDI" },
+    { id: "lector", icon: "🔦", label: "Lector de Documentos" },
+  ],
 };
 
 const ROLE_LABEL = {
