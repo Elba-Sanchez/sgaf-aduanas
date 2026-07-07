@@ -3,6 +3,7 @@ import { C } from "../../theme.js";
 
 export function SolicitudesView({ solicitudes, setSolicitudes, onToast }) {
   const [search, setSearch] = useState("");
+  const [rechazoModal, setRechazoModal] = useState(null); // { id, motivo }
 
   const filtered = solicitudes.filter(sol => {
     if (!search.trim()) return true;
@@ -17,11 +18,24 @@ export function SolicitudesView({ solicitudes, setSolicitudes, onToast }) {
     );
   });
 
-  const cambiarEstado = (id, nuevoEstado) => {
+  const aprobar = (id) => {
     setSolicitudes(prev =>
-      prev.map(sol => (sol.id === id ? { ...sol, estado: nuevoEstado } : sol))
+      prev.map(sol => (sol.id === id ? { ...sol, estado: "Aprobado", motivoRechazo: undefined } : sol))
     );
-    onToast(`Solicitud ${id} marcada como "${nuevoEstado}".`, "success");
+    onToast(`Solicitud ${id} marcada como "Aprobado".`, "success");
+  };
+
+  const abrirRechazo = (id) => setRechazoModal({ id, motivo: "" });
+  const cerrarRechazo = () => setRechazoModal(null);
+
+  const confirmarRechazo = () => {
+    const motivo = rechazoModal.motivo.trim();
+    if (!motivo) { onToast("Debes indicar el motivo del rechazo.", "error"); return; }
+    setSolicitudes(prev =>
+      prev.map(sol => (sol.id === rechazoModal.id ? { ...sol, estado: "Rechazado", motivoRechazo: motivo } : sol))
+    );
+    onToast(`Solicitud ${rechazoModal.id} rechazada.`, "success");
+    setRechazoModal(null);
   };
 
   const estadoBadge = (estado) => {
@@ -71,15 +85,22 @@ export function SolicitudesView({ solicitudes, setSolicitudes, onToast }) {
                   <td>{sol.tipo}</td>
                   <td>{sol.solicitante}</td>
                   <td>{sol.identificacion}</td>
-                  <td>{estadoBadge(sol.estado)}</td>
+                  <td>
+                    {estadoBadge(sol.estado)}
+                    {sol.estado === "Rechazado" && sol.motivoRechazo && (
+                      <div style={{ fontSize: 11, color: C.textMuted, marginTop: 4, maxWidth: 220 }}>
+                        <strong>Motivo:</strong> {sol.motivoRechazo}
+                      </div>
+                    )}
+                  </td>
                   <td>{sol.fecha}</td>
                   <td>
                     {sol.estado === "Pendiente" && (
                       <div style={{ display: "flex", gap: 6 }}>
-                        <button className="btn btn-success btn-sm" onClick={() => cambiarEstado(sol.id, "Aprobado")}>
+                        <button className="btn btn-success btn-sm" onClick={() => aprobar(sol.id)}>
                           Aprobar
                         </button>
-                        <button className="btn btn-danger btn-sm" onClick={() => cambiarEstado(sol.id, "Rechazado")}>
+                        <button className="btn btn-danger btn-sm" onClick={() => abrirRechazo(sol.id)}>
                           Rechazar
                         </button>
                       </div>
@@ -104,6 +125,41 @@ export function SolicitudesView({ solicitudes, setSolicitudes, onToast }) {
           Mostrando {filtered.length} de {solicitudes.length} solicitudes
         </div>
       </div>
+
+      {rechazoModal && (
+        <div
+          className="fade"
+          style={{
+            position: "fixed", inset: 0, background: "rgba(17,23,32,0.45)",
+            display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 16
+          }}
+          onClick={cerrarRechazo}
+        >
+          <div className="card" style={{ maxWidth: 440, width: "100%" }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+              <span style={{ fontSize: 22 }}>❌</span>
+              <div style={{ fontSize: 16, fontWeight: 600 }}>Rechazar solicitud {rechazoModal.id}</div>
+            </div>
+            <div style={{ fontSize: 13, color: C.textSec, marginBottom: 14 }}>
+              Indica el motivo del rechazo. Quedará registrado junto a la solicitud y podrá ser consultado por el solicitante.
+            </div>
+            <div className="fgroup">
+              <label className="flabel">Motivo del rechazo *</label>
+              <textarea
+                rows={4}
+                autoFocus
+                placeholder="Ej: Documentación incompleta, patente no coincide con el registro, etc."
+                value={rechazoModal.motivo}
+                onChange={e => setRechazoModal(m => ({ ...m, motivo: e.target.value }))}
+              />
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button className="btn btn-sec btn-sm" onClick={cerrarRechazo}>Cancelar</button>
+              <button className="btn btn-danger btn-sm" onClick={confirmarRechazo}>Confirmar rechazo</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

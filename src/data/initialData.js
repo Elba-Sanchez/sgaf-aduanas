@@ -26,7 +26,8 @@ export const SOLICITUDES_INIT = [
   },
   {
     id: "SOL-105", tipo: "Validación de vehículo", solicitante: "Camila Sepúlveda Torres", identificacion: "Patente AF-998-LK",
-    estado: "Rechazado", fecha: "2026-06-04 08:30"
+    estado: "Rechazado", fecha: "2026-06-04 08:30",
+    motivoRechazo: "El número de motor declarado no coincide con el registrado en el padrón vehicular argentino."
   },
 ];
 
@@ -41,7 +42,7 @@ export const AUDIT_INIT = [
   mockeados (SOLICITUDES_INIT / USUARIOS_INIT), para que al iniciar sesión
   la persona vea reflejada su propia información en las demás vistas.
   Por defecto para pruebas rápidas se usa 12345678-9
-*/ 
+*/
 
 export const USERS_LOGIN = {
   // --- Pasajeros ---
