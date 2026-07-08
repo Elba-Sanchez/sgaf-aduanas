@@ -44,6 +44,63 @@ export const AUDIT_INIT = [
   Por defecto para pruebas rápidas se usa 12345678-9
 */
 
+/* PERSONAS_MOCK — fuente única de verdad para el resultado de las
+   validaciones simuladas (SAG, PDI, menores) por RUT.
+   Todas las cuentas demo de USERS_LOGIN están mapeadas aquí para que el
+   resultado que ve el pasajero/funcionario sea SIEMPRE el mismo para un
+   mismo RUT, y además coincida con lo que ya se muestra en SOLICITUDES_INIT.
+   Un RUT que no aparezca en esta tabla no queda "sin resultado": mockApi.js
+   genera un resultado determinístico (hash del RUT) para que, aunque no sea
+   una de las cuentas demo, siga siendo siempre el mismo para ese RUT. */
+export const PERSONAS_MOCK = {
+  "12345678-9": {
+    nombre: "María González",
+    pdi: { alerta: false, mensaje: "Sin arraigo nacional ni órdenes vigentes." },
+    sag: { aprobado: true, mensaje: "Declaración aceptada automáticamente." },
+  },
+  "a998231": {
+    nombre: "Andrea Contreras Silva", // SOL-101: Declaración SAG — Pendiente
+    pdi: { alerta: false, mensaje: "Sin arraigo nacional ni órdenes vigentes." },
+    sag: { aprobado: false, mensaje: "Requiere revisión presencial en andén SAG." },
+  },
+  "18231992-k": {
+    nombre: "Matías Herrera Poblete", // SOL-102: Validación de menor — Pendiente
+    pdi: { alerta: false, mensaje: "Sin arraigo nacional ni órdenes vigentes." },
+    sag: { aprobado: true, mensaje: "Declaración aceptada automáticamente." },
+  },
+  "19334221-5": {
+    nombre: "Francisca Morales Díaz", // SOL-103: Validación de vehículo — Pendiente
+    pdi: { alerta: false, mensaje: "Sin arraigo nacional ni órdenes vigentes." },
+    sag: { aprobado: true, mensaje: "Declaración aceptada automáticamente." },
+  },
+  "15667123-4": {
+    nombre: "Ignacio Vargas Rojas", // SOL-104: Declaración SAG — Aprobado
+    pdi: { alerta: false, mensaje: "Sin arraigo nacional ni órdenes vigentes." },
+    sag: { aprobado: true, mensaje: "Declaración aceptada automáticamente." },
+  },
+  "17882556-1": {
+    nombre: "Camila Sepúlveda Torres", // SOL-105: Validación de vehículo — Rechazado
+    pdi: { alerta: true, mensaje: "ALERTA: Orden de arraigo nacional activo." },
+    sag: { aprobado: false, mensaje: "Requiere revisión presencial en andén SAG." },
+  },
+  "87654321-0": {
+    nombre: "Carlos Rodríguez Pérez",
+    pdi: { alerta: false, mensaje: "Sin arraigo nacional ni órdenes vigentes." },
+  },
+  "15987654-3": {
+    nombre: "Carolina Espinoza Reyes",
+    pdi: { alerta: false, mensaje: "Sin arraigo nacional ni órdenes vigentes." },
+  },
+  "18456123-k": {
+    nombre: "Rodrigo Fuentes Castillo",
+    pdi: { alerta: false, mensaje: "Sin arraigo nacional ni órdenes vigentes." },
+  },
+  "16234567-8": {
+    nombre: "Fernando Salazar Muñoz",
+    pdi: { alerta: false, mensaje: "Sin arraigo nacional ni órdenes vigentes." },
+  },
+};
+
 export const USERS_LOGIN = {
   // --- Pasajeros ---
   "12345678-9": { pass: "pasajero123", role: "pasajero", name: "María González" }, // cuenta demo por defecto

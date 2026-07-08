@@ -5,7 +5,7 @@ import { Spinner } from "../../components/common/Spinner.jsx";
 import { TiempoRespuesta } from "../../components/common/TiempoRespuesta.jsx";
 import { generarPdfComprobanteSag } from "../../utils/pdfGenerator.js";
 
-export function SagForm({ onToast }) {
+export function SagForm({ user, onToast }) {
   const [form, setForm] = useState({ frutas: false, carnes: false, lacteos: false, mascotas: false, semillas: false, otro: false, descripcion: "" });
   const [estado, setEstado] = useState(null); // null | "loading" | { aprobado, folio, mensaje } | { error }
   const declara = Object.values(form).some(v => v === true);
@@ -13,7 +13,7 @@ export function SagForm({ onToast }) {
   const handleEnviar = async () => {
     setEstado("loading");
     try {
-      const res = await mockApi.validarSag();
+      const res = await mockApi.validarSag(user?.doc);
       setEstado(res);
       onToast(res.aprobado ? "Declaración aceptada." : "Requiere revisión presencial.", res.aprobado ? "success" : "warning");
     } catch (e) {
