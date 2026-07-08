@@ -10,7 +10,7 @@ export function VehiculoIngreso({ onToast }) {
     if (!folio) { onToast("Ingresa el folio o escanea el código.", "error"); return; }
     setEstado("loading");
     try {
-      const res = await mockApi.consultarAduanaArg();
+      const res = await mockApi.consultarAduanaArg(folio);
       const fechaLimite = new Date(); fechaLimite.setDate(fechaLimite.getDate() + 180);
       setEstado({ ok: true, ...res, patente: "ARG-" + folio.slice(-4).toUpperCase(), pais: "Argentina", fechaLimite: fechaLimite.toLocaleDateString("es-CL") });
       onToast("Vehículo validado. Ingreso autorizado.", "success");

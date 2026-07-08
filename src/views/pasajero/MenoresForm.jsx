@@ -20,9 +20,9 @@ export function MenoresForm({ onToast }) {
     if (!form.archivoOk) { onToast("Debes subir la autorización notarial.", "error"); return; }
     setEstado("loading");
     try {
-      const res = await mockApi.validarMenor();
+      const res = await mockApi.validarMenor(form.rutMenor);
       setEstado(res);
-      onToast("Autorización validada correctamente.", "success");
+      onToast(res.aprobado ? "Autorización validada correctamente." : "Autorización requiere revisión manual.", res.aprobado ? "success" : "warning");
     } catch (e) {
       setEstado({ error: e.message });
       onToast(e.message, "error");
@@ -32,15 +32,21 @@ export function MenoresForm({ onToast }) {
   if (estado?.folio) return (
     <div className="fade">
       <div className="card" style={{ maxWidth: 520, margin: "0 auto", textAlign: "center" }}>
-        <div style={{ fontSize: 36, marginBottom: 10 }}>✅</div>
-        <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 6, color: C.success }}>Autorización validada</div>
-        <div style={{ fontSize: 13, color: C.textSec, marginBottom: 16 }}>El menor <strong>{form.nombreMenor}</strong> puede cruzar la frontera.</div>
+        <div style={{ fontSize: 36, marginBottom: 10 }}>{estado.aprobado ? "✅" : "⚠️"}</div>
+        <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 6, color: estado.aprobado ? C.success : C.warning }}>
+          {estado.aprobado ? "Autorización validada" : "Revisión manual requerida"}
+        </div>
+        <div style={{ fontSize: 13, color: C.textSec, marginBottom: 16 }}>
+          {estado.aprobado
+            ? <>El menor <strong>{form.nombreMenor}</strong> puede cruzar la frontera.</>
+            : (estado.mensaje ?? "El documento notarial debe ser revisado presencialmente por un funcionario.")}
+        </div>
         <div style={{ background: C.bg, borderRadius: 8, padding: "10px 16px", display: "inline-block", marginBottom: 20 }}>
-          <div style={{ fontSize: 12, color: C.textMuted }}>Folio de autorización</div>
+          <div style={{ fontSize: 12, color: C.textMuted }}>Folio de {estado.aprobado ? "autorización" : "seguimiento"}</div>
           <div style={{ fontFamily: "monospace", fontSize: 18, fontWeight: 600, color: C.navy }}>{estado.folio}</div>
         </div>
         <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-          <button className="btn btn-primary btn-sm">⬇️ Descargar</button>
+          {estado.aprobado && <button className="btn btn-primary btn-sm">⬇️ Descargar</button>}
           <button className="btn btn-sec btn-sm" onClick={() => setEstado(null)}>← Volver</button>
         </div>
       </div>
