@@ -4,18 +4,48 @@ import { mockApi } from "../../services/mockApi.js";
 import { Spinner } from "../../components/common/Spinner.jsx";
 import { TiempoRespuesta } from "../../components/common/TiempoRespuesta.jsx";
 import { generarPdfComprobanteSag } from "../../utils/pdfGenerator.js";
+import { siguienteIdSolicitud } from "../../data/initialData.js";
 
-export function SagForm({ user, onToast }) {
+export function SagForm({ user, setSolicitudes, onToast }) {
   const [form, setForm] = useState({ frutas: false, carnes: false, lacteos: false, mascotas: false, semillas: false, otro: false, descripcion: "" });
   const [estado, setEstado] = useState(null); // null | "loading" | { aprobado, folio, mensaje } | { error }
   const declara = Object.values(form).some(v => v === true);
+
+  // Registra la declaración en la cola compartida que revisan funcionario/admin,
+  // igual que hace MenoresForm. Si el sistema la aprobó automáticamente, igual
+  // queda con estado "Aprobado" para que se vea en el historial.
+  const registrarSolicitud = (res) => {
+    if (!setSolicitudes) return;
+    const productosLabels = {
+      frutas: "Frutas y verduras", carnes: "Carnes y embutidos", lacteos: "Lácteos y huevos",
+      mascotas: "Mascotas vivas", semillas: "Semillas y plantas", otro: "Otros productos orgánicos",
+    };
+    setSolicitudes(prev => [
+      {
+        id: siguienteIdSolicitud(prev),
+        tipo: "Declaración SAG",
+        solicitante: user?.name ?? "Pasajero",
+        identificacion: `RUT ${user?.doc ?? "—"}`,
+        estado: res.aprobado ? "Aprobado" : "Pendiente",
+        fecha: new Date().toLocaleString("sv-SE").slice(0, 16),
+        detalle: {
+          productos: Object.keys(productosLabels).filter(k => form[k]).map(k => productosLabels[k]),
+          descripcion: form.descripcion,
+          folio: res.folio,
+          mensajeSistema: res.mensaje,
+        },
+      },
+      ...prev,
+    ]);
+  };
 
   const handleEnviar = async () => {
     setEstado("loading");
     try {
       const res = await mockApi.validarSag(user?.doc);
       setEstado(res);
-      onToast(res.aprobado ? "Declaración aceptada." : "Requiere revisión presencial.", res.aprobado ? "success" : "warning");
+      registrarSolicitud(res);
+      onToast(res.aprobado ? "Declaración aceptada." : "Requiere revisión presencial. Se creó una solicitud para el funcionario.", res.aprobado ? "success" : "warning");
     } catch (e) {
       setEstado({ error: e.message });
       onToast(e.message, "error");

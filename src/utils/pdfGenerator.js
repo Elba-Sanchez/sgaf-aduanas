@@ -1,6 +1,6 @@
 // pdfGenerator.js — Generación real de documentos PDF (reemplaza la descarga simulada)
 import { jsPDF } from "jspdf";
-import { codificarQrVehiculo, codificarQrSag, generarQrDataUrl } from "./qr.js";
+import { codificarQrVehiculo, codificarQrSag, codificarQrMenor, generarQrDataUrl } from "./qr.js";
 
 const NAVY = [17, 43, 76];
 const GOLD = [176, 141, 87];
@@ -75,7 +75,7 @@ export async function generarPdfVehiculoSalida(form, folio) {
   ];
 
   let col = 0;
-  filas.forEach(([label, valor], i) => {
+  filas.forEach(([label, valor]) => {
     const x = 24 + col * 90;
     campo(doc, label, valor, x, y, 80);
     if (col === 1) y += 20;
@@ -183,6 +183,73 @@ export async function generarPdfComprobanteSag(estado, form) {
 
   pie(doc, estado.folio);
   doc.save(`comprobante-sag-${estado.folio}.pdf`);
+}
+
+/**
+ * Comprobante: Autorización de Salida de Menores
+ */
+export async function generarPdfMenor(estado, form) {
+  const doc = new jsPDF();
+  encabezado(doc, "Comprobante de Autorización de Menor");
+
+  let y = 45;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.setTextColor(...(estado.aprobado ? [30, 130, 76] : [176, 130, 20]));
+  doc.text(estado.aprobado ? "AUTORIZACIÓN VALIDADA" : "REVISIÓN MANUAL REQUERIDA", 14, y);
+
+  y += 8;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(...TEXT_SEC);
+  doc.text(doc.splitTextToSize(estado.mensaje || "", 180), 14, y);
+
+  y += 14;
+  doc.setDrawColor(...BORDER);
+  doc.roundedRect(14, y, 182, 22, 2, 2);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(...TEXT_SEC);
+  doc.text("FOLIO DE AUTORIZACIÓN", 24, y + 9);
+  doc.setFontSize(14);
+  doc.setTextColor(...NAVY);
+  doc.text(estado.folio || "", 24, y + 17);
+
+  y += 34;
+  doc.setDrawColor(...BORDER);
+  doc.roundedRect(14, y, 182, 60, 2, 2);
+  y += 12;
+  const filas = [
+    ["Nombre del menor", form?.nombreMenor],
+    ["RUT / Pasaporte del menor", form?.rutMenor],
+    ["Fecha de nacimiento", form?.fechaNacimiento],
+    ["RUT autorizante", form?.rutAutorizante],
+    ["Vínculo con el menor", form?.vinculo],
+  ];
+  let col = 0;
+  filas.forEach(([label, valor]) => {
+    const x = 24 + col * 90;
+    campo(doc, label, valor, x, y, 80);
+    if (col === 1) y += 20;
+    col = col === 0 ? 1 : 0;
+  });
+
+  y = Math.max(y, 195);
+  try {
+    const qrSize = 55;
+    const qrX = (210 - qrSize) / 2;
+    const qrDataUrl = await generarQrDataUrl(codificarQrMenor(estado, form));
+    doc.addImage(qrDataUrl, "PNG", qrX, y, qrSize, qrSize);
+    doc.setFontSize(8);
+    doc.setTextColor(...TEXT_SEC);
+    doc.text("Escanee este código en el control fronterizo", 105, y + qrSize + 6, { align: "center" });
+    doc.text("para validar la autenticidad del documento.", 105, y + qrSize + 11, { align: "center" });
+  } catch (e) {
+    console.error("Error generando QR:", e);
+  }
+
+  pie(doc, estado.folio);
+  doc.save(`autorizacion-menor-${estado.folio}.pdf`);
 }
 
 /**
