@@ -10,26 +10,54 @@ export const USUARIOS_INIT = [
 export const SOLICITUDES_INIT = [
   {
     id: "SOL-101", tipo: "Declaración SAG", solicitante: "Andrea Contreras Silva", identificacion: "Pasaporte A998231",
-    estado: "Pendiente", fecha: "2026-06-04 10:14"
+    estado: "Pendiente", fecha: "2026-06-04 10:14",
+    detalle: { productos: ["Frutas y verduras", "Semillas y plantas"], descripcion: "Trae 2 kg de manzanas y semillas de tomate para uso personal.", folio: "SAG-118204", mensajeSistema: "Requiere revisión presencial en andén SAG." }
   },
   {
     id: "SOL-102", tipo: "Validación de menor", solicitante: "Matías Herrera Poblete", identificacion: "RUT 18.231.992-K",
-    estado: "Pendiente", fecha: "2026-06-04 11:02"
+    estado: "Pendiente", fecha: "2026-06-04 11:02",
+    detalle: { nombreMenor: "Martina Herrera Contreras", rutMenor: "24.109.887-3", fechaNacimiento: "2016-03-11", rutAutorizante: "18.231.992-K", vinculo: "Padre/Madre", folio: "AU-552310", mensajeSistema: "Documento notarial ilegible, requiere revisión manual." }
   },
   {
     id: "SOL-103", tipo: "Validación de vehículo", solicitante: "Francisca Morales Díaz", identificacion: "Patente AA-234-BB",
-    estado: "Pendiente", fecha: "2026-06-04 11:45"
+    estado: "Pendiente", fecha: "2026-06-04 11:45",
+    detalle: { patente: "AA-234-BB", marca: "Chevrolet", modelo: "Onix", anio: "2021", color: "Gris", propietario: "Francisca Morales Díaz", rut: "19.334.221-5" }
   },
   {
     id: "SOL-104", tipo: "Declaración SAG", solicitante: "Ignacio Vargas Rojas", identificacion: "RUT 15.667.123-4",
-    estado: "Aprobado", fecha: "2026-06-04 09:12"
+    estado: "Aprobado", fecha: "2026-06-04 09:12",
+    detalle: { productos: [], descripcion: "", folio: "SAG-994102", mensajeSistema: "Declaración aceptada automáticamente." }
   },
   {
     id: "SOL-105", tipo: "Validación de vehículo", solicitante: "Camila Sepúlveda Torres", identificacion: "Patente AF-998-LK",
     estado: "Rechazado", fecha: "2026-06-04 08:30",
-    motivoRechazo: "El número de motor declarado no coincide con el registrado en el padrón vehicular argentino."
+    motivoRechazo: "El número de motor declarado no coincide con el registrado en el padrón vehicular argentino.",
+    detalle: { patente: "AF-998-LK", marca: "Ford", modelo: "Ranger", anio: "2019", color: "Rojo", propietario: "Camila Sepúlveda Torres", rut: "17.882.556-1" }
   },
 ];
+
+// Genera el siguiente ID correlativo "SOL-###" a partir de la lista actual
+// de solicitudes, para que las nuevas declaraciones/autorizaciones que
+// generan los pasajeros se sumen a la misma cola que revisan funcionario/admin.
+export function siguienteIdSolicitud(solicitudesActuales) {
+  const max = solicitudesActuales.reduce((acc, s) => {
+    const n = parseInt(String(s.id).replace(/\D/g, ""), 10);
+    return Number.isFinite(n) && n > acc ? n : acc;
+  }, 100);
+  return `SOL-${max + 1}`;
+}
+
+/* FOLIOS_ADUANA_MOCK — misma idea que PERSONAS_MOCK pero para el módulo de
+   "Registro Ingreso Vehículos Extranjeros" (funcionario), donde se valida un
+   documento de admisión temporal YA EMITIDO por Aduana Argentina. Estos son
+   los folios de ejemplo que puedes usar en la demo; cualquier otro folio
+   también entrega siempre el mismo resultado (determinístico), pero estos
+   están pensados para mostrar ambos casos: habilitado y rechazado. */
+export const FOLIOS_ADUANA_MOCK = {
+  "arg-2024-xk9": { habilitado: true, titular: "Carlos Gómez Bianchi", modelo: "Volkswagen Amarok 2021", patente: "AC992LL" },
+  "arg-2024-lm2": { habilitado: true, titular: "Roberto Díaz Sosa", modelo: "Toyota Hilux 2022", patente: "AD118KP" },
+  "arg-2023-zz0": { habilitado: false, titular: "Martín Álvarez Pino", modelo: "Ford Ranger 2018", patente: "AB004JJ", motivo: "El documento de admisión temporal venció hace 12 días." },
+};
 
 export const AUDIT_INIT = [
   { id: 1, timestamp: "2026-06-04 14:22:10", usuario: "fsalazar@aduana.cl", accion: "Modificación de permisos de usuario ID 2" },

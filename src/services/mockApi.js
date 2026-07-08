@@ -15,7 +15,7 @@
 //      resultado. Al ser un hash y no Math.random(), ese mismo RUT "inventado"
 //      seguirá dando siempre el mismo resultado mientras se pruebe.
 
-import { PERSONAS_MOCK } from "../data/initialData.js";
+import { PERSONAS_MOCK, FOLIOS_ADUANA_MOCK } from "../data/initialData.js";
 
 // Normaliza un RUT/documento para usarlo como llave: sin puntos, sin
 // espacios, sin mayúsculas/minúsculas mezcladas. "12.345.678-9" y
@@ -107,6 +107,16 @@ export const mockApi = {
     _medir(async () => {
       await _delay();
       const key = _normalizar(folio) || "anonimo";
-      return { habilitado: true, diasRestantes: 180, titular: "Carlos Rodríguez", modelo: "Toyota Hilux 2022", folio: key };
+      const doc = FOLIOS_ADUANA_MOCK[key];
+      const habilitado = doc ? doc.habilitado : _hash01("arg:" + key) > 0.15;
+      return {
+        habilitado,
+        diasRestantes: habilitado ? 180 : 0,
+        titular: doc?.titular ?? "Carlos Gómez Bianchi",
+        modelo: doc?.modelo ?? "Toyota Hilux 2022",
+        patente: doc?.patente ?? ("AR" + key.slice(-4).toUpperCase()),
+        motivo: doc?.motivo ?? (habilitado ? undefined : "El documento no figura como vigente en el sistema de Aduana Argentina."),
+        folio: key,
+      };
     }),
 };

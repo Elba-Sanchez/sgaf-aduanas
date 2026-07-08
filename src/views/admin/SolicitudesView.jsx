@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { C } from "../../theme.js";
+import { DetalleSolicitud } from "../../components/common/DetalleSolicitud.jsx";
 
 export function SolicitudesView({ solicitudes, setSolicitudes, onToast }) {
   const [search, setSearch] = useState("");
-  const [rechazoModal, setRechazoModal] = useState(null); // { id, motivo }
+  const [modal, setModal] = useState(null); // { sol, modo: 'ver' | 'rechazar', motivo }
 
   const filtered = solicitudes.filter(sol => {
     if (!search.trim()) return true;
@@ -18,24 +19,24 @@ export function SolicitudesView({ solicitudes, setSolicitudes, onToast }) {
     );
   });
 
-  const aprobar = (id) => {
-    setSolicitudes(prev =>
-      prev.map(sol => (sol.id === id ? { ...sol, estado: "Aprobado", motivoRechazo: undefined } : sol))
-    );
+  const abrirDetalle = (sol) => setModal({ sol, modo: "ver", motivo: "" });
+  const cerrar = () => setModal(null);
+  const pedirMotivo = () => setModal(m => ({ ...m, modo: "rechazar" }));
+
+  const aprobar = () => {
+    const id = modal.sol.id;
+    setSolicitudes(prev => prev.map(sol => (sol.id === id ? { ...sol, estado: "Aprobado", motivoRechazo: undefined } : sol)));
     onToast(`Solicitud ${id} marcada como "Aprobado".`, "success");
+    cerrar();
   };
 
-  const abrirRechazo = (id) => setRechazoModal({ id, motivo: "" });
-  const cerrarRechazo = () => setRechazoModal(null);
-
   const confirmarRechazo = () => {
-    const motivo = rechazoModal.motivo.trim();
+    const motivo = modal.motivo.trim();
     if (!motivo) { onToast("Debes indicar el motivo del rechazo.", "error"); return; }
-    setSolicitudes(prev =>
-      prev.map(sol => (sol.id === rechazoModal.id ? { ...sol, estado: "Rechazado", motivoRechazo: motivo } : sol))
-    );
-    onToast(`Solicitud ${rechazoModal.id} rechazada.`, "success");
-    setRechazoModal(null);
+    const id = modal.sol.id;
+    setSolicitudes(prev => prev.map(sol => (sol.id === id ? { ...sol, estado: "Rechazado", motivoRechazo: motivo } : sol)));
+    onToast(`Solicitud ${id} rechazada.`, "success");
+    cerrar();
   };
 
   const estadoBadge = (estado) => {
@@ -74,7 +75,7 @@ export function SolicitudesView({ solicitudes, setSolicitudes, onToast }) {
               <th>Identificación</th>
               <th>Estado</th>
               <th>Fecha</th>
-              <th style={{ width: 160 }}>Acciones</th>
+              <th style={{ width: 130 }}>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -95,19 +96,9 @@ export function SolicitudesView({ solicitudes, setSolicitudes, onToast }) {
                   </td>
                   <td>{sol.fecha}</td>
                   <td>
-                    {sol.estado === "Pendiente" && (
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <button className="btn btn-success btn-sm" onClick={() => aprobar(sol.id)}>
-                          Aprobar
-                        </button>
-                        <button className="btn btn-danger btn-sm" onClick={() => abrirRechazo(sol.id)}>
-                          Rechazar
-                        </button>
-                      </div>
-                    )}
-                    {sol.estado !== "Pendiente" && (
-                      <span style={{ color: C.textMuted, fontSize: 12 }}>Sin acciones</span>
-                    )}
+                    <button className="btn btn-sec btn-sm" onClick={() => abrirDetalle(sol)}>
+                      📄 Ver documento
+                    </button>
                   </td>
                 </tr>
               ))
@@ -126,37 +117,66 @@ export function SolicitudesView({ solicitudes, setSolicitudes, onToast }) {
         </div>
       </div>
 
-      {rechazoModal && (
+      {modal && (
         <div
           className="fade"
           style={{
             position: "fixed", inset: 0, background: "rgba(17,23,32,0.45)",
             display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 16
           }}
-          onClick={cerrarRechazo}
+          onClick={cerrar}
         >
-          <div className="card" style={{ maxWidth: 440, width: "100%" }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-              <span style={{ fontSize: 22 }}>❌</span>
-              <div style={{ fontSize: 16, fontWeight: 600 }}>Rechazar solicitud {rechazoModal.id}</div>
-            </div>
-            <div style={{ fontSize: 13, color: C.textSec, marginBottom: 14 }}>
-              Indica el motivo del rechazo. Quedará registrado junto a la solicitud y podrá ser consultado por el solicitante.
-            </div>
-            <div className="fgroup">
-              <label className="flabel">Motivo del rechazo *</label>
-              <textarea
-                rows={4}
-                autoFocus
-                placeholder="Ej: Documentación incompleta, patente no coincide con el registro, etc."
-                value={rechazoModal.motivo}
-                onChange={e => setRechazoModal(m => ({ ...m, motivo: e.target.value }))}
-              />
-            </div>
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button className="btn btn-sec btn-sm" onClick={cerrarRechazo}>Cancelar</button>
-              <button className="btn btn-danger btn-sm" onClick={confirmarRechazo}>Confirmar rechazo</button>
-            </div>
+          <div className="card" style={{ maxWidth: 560, width: "100%", maxHeight: "90vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
+            {modal.modo === "ver" && (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+                  <span style={{ fontSize: 22 }}>📄</span>
+                  <div style={{ fontSize: 16, fontWeight: 600 }}>{modal.sol.tipo} — {modal.sol.id}</div>
+                </div>
+                <div className="g2" style={{ fontSize: 13, marginBottom: 14, rowGap: 10, marginTop: 10 }}>
+                  <div><strong>Fecha:</strong> {modal.sol.fecha}</div>
+                  <div><strong>Estado:</strong> {estadoBadge(modal.sol.estado)}</div>
+                  <div><strong>Solicitante:</strong> {modal.sol.solicitante}</div>
+                  <div><strong>Identificación:</strong> {modal.sol.identificacion}</div>
+                </div>
+                <DetalleSolicitud solicitud={modal.sol} onToast={onToast} />
+                <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 18 }}>
+                  <button className="btn btn-sec btn-sm" onClick={cerrar}>Cerrar</button>
+                  {modal.sol.estado === "Pendiente" && (
+                    <>
+                      <button className="btn btn-danger btn-sm" onClick={pedirMotivo}>Rechazar</button>
+                      <button className="btn btn-success btn-sm" onClick={aprobar}>Aprobar</button>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+
+            {modal.modo === "rechazar" && (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+                  <span style={{ fontSize: 22 }}>❌</span>
+                  <div style={{ fontSize: 16, fontWeight: 600 }}>Rechazar solicitud {modal.sol.id}</div>
+                </div>
+                <div style={{ fontSize: 13, color: C.textSec, marginBottom: 14 }}>
+                  Indica el motivo del rechazo. Quedará registrado junto a la solicitud y podrá ser consultado por el solicitante.
+                </div>
+                <div className="fgroup">
+                  <label className="flabel">Motivo del rechazo *</label>
+                  <textarea
+                    rows={4}
+                    autoFocus
+                    placeholder="Ej: Documentación incompleta, patente no coincide con el registro, etc."
+                    value={modal.motivo}
+                    onChange={e => setModal(m => ({ ...m, motivo: e.target.value }))}
+                  />
+                </div>
+                <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+                  <button className="btn btn-sec btn-sm" onClick={() => setModal(m => ({ ...m, modo: "ver" }))}>← Volver</button>
+                  <button className="btn btn-danger btn-sm" onClick={confirmarRechazo}>Confirmar rechazo</button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

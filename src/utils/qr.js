@@ -15,9 +15,18 @@ export function codificarQrVehiculo(form, folio) {
   ].join("|");
 }
 
-export function codificarQrSag(estado, form) {
+export function codificarQrSag(estado) {
   return [
     "SGAF", "SAG", estado.folio || "",
+    estado.aprobado ? "APROBADO" : "REVISION",
+  ].join("|");
+}
+
+export function codificarQrMenor(estado, form) {
+  return [
+    "SGAF", "AUT", estado.folio || "",
+    form.nombreMenor || "",
+    form.rutMenor || "",
     estado.aprobado ? "APROBADO" : "REVISION",
   ].join("|");
 }
@@ -46,6 +55,15 @@ export function decodificarQr(texto) {
       tipo: "SAG",
       folio: partes[2] || "",
       estado: partes[3] || "",
+    };
+  }
+  if (tipo === "AUT") {
+    return {
+      tipo: "AUT",
+      folio: partes[2] || "",
+      nombreMenor: partes[3] || "",
+      rutMenor: partes[4] || "",
+      estado: partes[5] || "",
     };
   }
   return null;

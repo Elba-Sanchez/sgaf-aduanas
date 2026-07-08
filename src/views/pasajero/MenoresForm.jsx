@@ -2,8 +2,10 @@ import { useState } from "react";
 import { C } from "../../theme.js";
 import { mockApi } from "../../services/mockApi.js";
 import { Spinner } from "../../components/common/Spinner.jsx";
+import { generarPdfMenor } from "../../utils/pdfGenerator.js";
+import { siguienteIdSolicitud } from "../../data/initialData.js";
 
-export function MenoresForm({ onToast }) {
+export function MenoresForm({ user, setSolicitudes, onToast }) {
   const [form, setForm] = useState({
     nombreMenor: "", rutMenor: "", fechaNacimiento: "", rutAutorizante: "", vinculo: "", archivoNombre: null, archivoOk: false
   });
@@ -15,6 +17,34 @@ export function MenoresForm({ onToast }) {
     setTimeout(() => f("archivoOk", true), 1800);
   };
 
+  // Registra la autorización en la cola compartida que revisan funcionario/admin.
+  // Si el sistema la aprobó automáticamente, igual queda registrada (con estado
+  // "Aprobado") para que quede visible en el historial y se pueda descargar
+  // el mismo documento desde el panel de funcionario/admin.
+  const registrarSolicitud = (res) => {
+    if (!setSolicitudes) return;
+    setSolicitudes(prev => [
+      {
+        id: siguienteIdSolicitud(prev),
+        tipo: "Validación de menor",
+        solicitante: user?.name ?? form.rutAutorizante,
+        identificacion: `RUT ${form.rutAutorizante}`,
+        estado: res.aprobado ? "Aprobado" : "Pendiente",
+        fecha: new Date().toLocaleString("sv-SE").slice(0, 16),
+        detalle: {
+          nombreMenor: form.nombreMenor,
+          rutMenor: form.rutMenor,
+          fechaNacimiento: form.fechaNacimiento,
+          rutAutorizante: form.rutAutorizante,
+          vinculo: form.vinculo,
+          folio: res.folio,
+          mensajeSistema: res.mensaje,
+        },
+      },
+      ...prev,
+    ]);
+  };
+
   const handleValidar = async () => {
     if (!form.nombreMenor || !form.rutMenor || !form.rutAutorizante) { onToast("Completa todos los campos requeridos.", "error"); return; }
     if (!form.archivoOk) { onToast("Debes subir la autorización notarial.", "error"); return; }
@@ -22,11 +52,18 @@ export function MenoresForm({ onToast }) {
     try {
       const res = await mockApi.validarMenor(form.rutMenor);
       setEstado(res);
-      onToast(res.aprobado ? "Autorización validada correctamente." : "Autorización requiere revisión manual.", res.aprobado ? "success" : "warning");
+      registrarSolicitud(res);
+      onToast(res.aprobado ? "Autorización validada correctamente." : "Autorización requiere revisión manual. Se creó una solicitud para el funcionario.", res.aprobado ? "success" : "warning");
     } catch (e) {
       setEstado({ error: e.message });
       onToast(e.message, "error");
     }
+  };
+
+  const handleDescargar = async () => {
+    onToast("Generando documento con código QR...", "info");
+    await generarPdfMenor(estado, form);
+    onToast("Descargando documento PDF...", "success");
   };
 
   if (estado?.folio) return (
@@ -39,14 +76,14 @@ export function MenoresForm({ onToast }) {
         <div style={{ fontSize: 13, color: C.textSec, marginBottom: 16 }}>
           {estado.aprobado
             ? <>El menor <strong>{form.nombreMenor}</strong> puede cruzar la frontera.</>
-            : (estado.mensaje ?? "El documento notarial debe ser revisado presencialmente por un funcionario.")}
+            : (estado.mensaje ?? "El documento notarial debe ser revisado presencialmente por un funcionario. Quedó registrada una solicitud pendiente.")}
         </div>
         <div style={{ background: C.bg, borderRadius: 8, padding: "10px 16px", display: "inline-block", marginBottom: 20 }}>
           <div style={{ fontSize: 12, color: C.textMuted }}>Folio de {estado.aprobado ? "autorización" : "seguimiento"}</div>
           <div style={{ fontFamily: "monospace", fontSize: 18, fontWeight: 600, color: C.navy }}>{estado.folio}</div>
         </div>
         <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-          {estado.aprobado && <button className="btn btn-primary btn-sm">⬇️ Descargar</button>}
+          {estado.aprobado && <button className="btn btn-primary btn-sm" onClick={handleDescargar}>⬇️ Descargar</button>}
           <button className="btn btn-sec btn-sm" onClick={() => setEstado(null)}>← Volver</button>
         </div>
       </div>

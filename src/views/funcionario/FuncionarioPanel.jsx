@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { C } from "../../theme.js";
 import { StatCard } from "../../components/common/StatCard.jsx";
+import { DetalleSolicitud } from "../../components/common/DetalleSolicitud.jsx";
 
 export function FuncionarioPanel({ user, onNav, solicitudes, setSolicitudes, onToast }) {
   const [modal, setModal] = useState(null); // { sol, modo: 'ver' | 'rechazar', motivo }
@@ -90,7 +91,7 @@ export function FuncionarioPanel({ user, onNav, solicitudes, setSolicitudes, onT
           }}
           onClick={cerrar}
         >
-          <div className="card" style={{ maxWidth: 440, width: "100%" }} onClick={e => e.stopPropagation()}>
+          <div className="card" style={{ maxWidth: 560, width: "100%", maxHeight: "90vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
             {modal.modo === "ver" && (
               <>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
@@ -98,15 +99,15 @@ export function FuncionarioPanel({ user, onNav, solicitudes, setSolicitudes, onT
                   <div style={{ fontSize: 16, fontWeight: 600 }}>Detalle de solicitud {modal.sol.id}</div>
                 </div>
                 <div style={{ fontSize: 13, color: C.textSec, marginBottom: 14 }}>
-                  Revisa los datos antes de aprobar o rechazar el trámite.
+                  Revisa el documento antes de aprobar o rechazar el trámite.
                 </div>
-                <div className="g2" style={{ fontSize: 13, marginBottom: 18, rowGap: 10 }}>
-                  <div><strong>Tipo:</strong> {modal.sol.tipo}</div>
+                <div className="g2" style={{ fontSize: 13, marginBottom: 14, rowGap: 10 }}>
                   <div><strong>Fecha:</strong> {modal.sol.fecha}</div>
                   <div><strong>Solicitante:</strong> {modal.sol.solicitante}</div>
                   <div><strong>Identificación:</strong> {modal.sol.identificacion}</div>
                 </div>
-                <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+                <DetalleSolicitud solicitud={modal.sol} onToast={onToast} />
+                <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 18 }}>
                   <button className="btn btn-sec btn-sm" onClick={cerrar}>Cerrar</button>
                   <button className="btn btn-danger btn-sm" onClick={pedirMotivo}>Rechazar</button>
                   <button className="btn btn-success btn-sm" onClick={aprobar}>Aprobar</button>
