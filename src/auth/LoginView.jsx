@@ -16,7 +16,7 @@ export function LoginView({ onLogin }) {
       if (u && u.pass === pass) {
         onLogin({ role: u.role, name: u.name, doc });
       } else {
-        setErr("RUT/documento o contraseña incorrectos.");
+        setErr("RUT/pasaporte o contraseña incorrectos.");
       }
       setLoading(false);
     }, 900);
@@ -40,10 +40,10 @@ export function LoginView({ onLogin }) {
           </div>
           <div className="fgroup">
             <label className="flabel">RUT / Pasaporte</label>
-            <input type="text" placeholder="ej. 12345678-9 o admin" value={doc} onChange={e => setDoc(e.target.value)} />
+            <input type="text" placeholder="ej. 12345678-9 / a123456" value={doc} onChange={e => setDoc(e.target.value)} />
           </div>
           <div className="fgroup">
-            <label className="flabel">Contraseña</label>
+            <label className="flabel">Clave única / Contraseña</label>
             <input type="password" placeholder="••••••••" value={pass} onChange={e => setPass(e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleLogin()} />
           </div>
@@ -52,6 +52,8 @@ export function LoginView({ onLogin }) {
             onClick={handleLogin} disabled={loading}>
             {loading ? "Verificando..." : "Ingresar al sistema"}
           </button>
+          {/* Cuentas demo — ocultas para la presentación, no se borraron.
+              Para volver a mostrarlas, descomenta este bloque.
           <div style={{ marginTop: 20, padding: 12, background: C.bg, borderRadius: 8, fontSize: 12, color: C.textSec, lineHeight: 1.7 }}>
             <strong>Cuentas demo:</strong><br />
             Pasajero: <code>12345678-9</code> / <code>pasajero123</code><br />
@@ -59,6 +61,7 @@ export function LoginView({ onLogin }) {
             Admin: <code>admin</code> / <code>admin123</code><br />
             PDI: <code>pdi001</code> / <code>pdi123</code>
           </div>
+          */}
         </div>
       </div>
     </div>
