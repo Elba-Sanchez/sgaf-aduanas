@@ -36,9 +36,6 @@ export const SOLICITUDES_INIT = [
   },
 ];
 
-// Genera el siguiente ID correlativo "SOL-###" a partir de la lista actual
-// de solicitudes, para que las nuevas declaraciones/autorizaciones que
-// generan los pasajeros se sumen a la misma cola que revisan funcionario/admin.
 export function siguienteIdSolicitud(solicitudesActuales) {
   const max = solicitudesActuales.reduce((acc, s) => {
     const n = parseInt(String(s.id).replace(/\D/g, ""), 10);
@@ -47,12 +44,6 @@ export function siguienteIdSolicitud(solicitudesActuales) {
   return `SOL-${max + 1}`;
 }
 
-/* FOLIOS_ADUANA_MOCK — misma idea que PERSONAS_MOCK pero para el módulo de
-   "Registro Ingreso Vehículos Extranjeros" (funcionario), donde se valida un
-   documento de admisión temporal YA EMITIDO por Aduana Argentina. Estos son
-   los folios de ejemplo que puedes usar en la demo; cualquier otro folio
-   también entrega siempre el mismo resultado (determinístico), pero estos
-   están pensados para mostrar ambos casos: habilitado y rechazado. */
 export const FOLIOS_ADUANA_MOCK = {
   "arg-2024-xk9": { habilitado: true, titular: "Carlos Gómez Bianchi", modelo: "Volkswagen Amarok 2021", patente: "AC992LL" },
   "arg-2024-lm2": { habilitado: true, titular: "Roberto Díaz Sosa", modelo: "Toyota Hilux 2022", patente: "AD118KP" },
@@ -66,20 +57,7 @@ export const AUDIT_INIT = [
   { id: 4, timestamp: "2026-06-04 12:10:04", usuario: "fsalazar@aduana.cl", accion: "Ingreso Vehículo Argentino Patente: AC992LL" },
 ];
 
-/* Cuentas demo — cada una corresponde a alguien que ya existe en los datos
-  mockeados (SOLICITUDES_INIT / USUARIOS_INIT), para que al iniciar sesión
-  la persona vea reflejada su propia información en las demás vistas.
-  Por defecto para pruebas rápidas se usa 12345678-9
-*/
 
-/* PERSONAS_MOCK — fuente única de verdad para el resultado de las
-   validaciones simuladas (SAG, PDI, menores) por RUT.
-   Todas las cuentas demo de USERS_LOGIN están mapeadas aquí para que el
-   resultado que ve el pasajero/funcionario sea SIEMPRE el mismo para un
-   mismo RUT, y además coincida con lo que ya se muestra en SOLICITUDES_INIT.
-   Un RUT que no aparezca en esta tabla no queda "sin resultado": mockApi.js
-   genera un resultado determinístico (hash del RUT) para que, aunque no sea
-   una de las cuentas demo, siga siendo siempre el mismo para ese RUT. */
 export const PERSONAS_MOCK = {
   "12345678-9": {
     nombre: "María González",
@@ -139,12 +117,12 @@ export const USERS_LOGIN = {
   "17882556-1": { pass: "pasajero123", role: "pasajero", name: "Camila Sepúlveda Torres" }, // SOL-105, vehículo rechazado
 
   // --- Funcionarios de aduana (coinciden con USUARIOS_INIT) ---
-  "87654321-0": { pass: "func123", role: "funcionario", name: "Carlos Rodríguez Pérez" },
+  "87654321-0": { pass: "func123", role: "funcionario", name: "Carlos Rodríguez Pérez" }, // cuenta demo por defecto
   "15987654-3": { pass: "func123", role: "funcionario", name: "Carolina Espinoza Reyes" },
   "18456123-k": { pass: "func123", role: "funcionario", name: "Rodrigo Fuentes Castillo" },
 
   // --- Administración (coincide con USUARIOS_INIT) ---
-  "admin": { pass: "admin123", role: "admin", name: "Administrador SGAF" }, // acceso genérico
+  "admin": { pass: "admin123", role: "admin", name: "Administrador SGAF" }, // cuenta demo por defecto
   "16234567-8": { pass: "admin123", role: "admin", name: "Fernando Salazar Muñoz" },
 
   // --- PDI ---

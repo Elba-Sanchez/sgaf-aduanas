@@ -11,9 +11,6 @@ export function SagForm({ user, setSolicitudes, onToast }) {
   const [estado, setEstado] = useState(null); // null | "loading" | { aprobado, folio, mensaje } | { error }
   const declara = Object.values(form).some(v => v === true);
 
-  // Registra la declaración en la cola compartida que revisan funcionario/admin,
-  // igual que hace MenoresForm. Si el sistema la aprobó automáticamente, igual
-  // queda con estado "Aprobado" para que se vea en el historial.
   const registrarSolicitud = (res) => {
     if (!setSolicitudes) return;
     const productosLabels = {

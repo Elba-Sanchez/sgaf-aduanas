@@ -1,4 +1,3 @@
-// pdfGenerator.js — Generación real de documentos PDF (reemplaza la descarga simulada)
 import { jsPDF } from "jspdf";
 import { codificarQrVehiculo, codificarQrSag, codificarQrMenor, generarQrDataUrl } from "./qr.js";
 
