@@ -13,6 +13,7 @@ import { TiempoRespuesta } from "../../components/common/TiempoRespuesta.jsx";
 // siempre enfocado — cualquier lector conectado a la caseta funciona sin
 // configuración adicional. Se incluye también lectura por cámara como
 // respaldo para casetas que aún no cuentan con lector físico instalado.
+
 export function LectorControl({ onToast }) {
   const [valor, setValor] = useState("");
   const [resultado, setResultado] = useState(null);
@@ -104,12 +105,12 @@ export function LectorControl({ onToast }) {
     }
   };
 
-  const detenerCamara = () => {
+  function detenerCamara() {
     cancelAnimationFrame(rafRef.current);
     streamRef.current?.getTracks().forEach(t => t.stop());
     streamRef.current = null;
     setModoCamara(false);
-  };
+  }
 
   const loopCamara = async () => {
     const { default: jsQR } = await import("jsqr");
@@ -163,6 +164,9 @@ export function LectorControl({ onToast }) {
               onKeyDown={handleKeyDown}
               onBlur={() => setTimeout(() => inputRef.current?.focus(), 150)}
             />
+            <div style={{ fontSize: 11, color: C.textMuted, marginTop: 6 }}>
+              ¿Cuál es el código? El RUT del pasajero (ej: <strong style={{ fontFamily: "monospace" }}>17882556-1</strong>), consultado directo en PDI.
+            </div>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             <button className="btn btn-primary btn-sm" onClick={() => procesarCodigo(valor)} disabled={!valor || resultado === "loading"}>
