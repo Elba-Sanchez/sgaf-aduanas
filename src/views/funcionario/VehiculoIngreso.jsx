@@ -1,11 +1,6 @@
 import { useState } from "react";
 import { C } from "../../theme.js";
 import { mockApi } from "../../services/mockApi.js";
-import { FOLIOS_ADUANA_MOCK } from "../../data/initialData.js";
-
-// Folios de ejemplo listos para probar en la demo (mismos de FOLIOS_ADUANA_MOCK):
-// dos habilitados y uno rechazado, para poder mostrar ambos casos sin adivinar.
-const FOLIOS_EJEMPLO = Object.entries(FOLIOS_ADUANA_MOCK).map(([folio, d]) => ({ folio: folio.toUpperCase(), ...d }));
 
 export function VehiculoIngreso({ onToast }) {
   const [folio, setFolio] = useState("");
@@ -32,8 +27,6 @@ export function VehiculoIngreso({ onToast }) {
     }
   };
 
-  const usarEjemplo = (f) => { setFolio(f); handleScan(f); };
-
   const handleRegistrar = () => {
     setRegistrado(true);
     onToast("Ingreso registrado correctamente.", "success");
@@ -47,33 +40,19 @@ export function VehiculoIngreso({ onToast }) {
         <div className="fgroup">
           <label className="flabel">Folio / Código del documento argentino</label>
           <div style={{ display: "flex", gap: 10 }}>
-            <input type="text" placeholder="ARG-2024-XK9..." value={folio} onChange={e => setFolio(e.target.value)} onKeyDown={e => e.key === "Enter" && handleScan()} />
+            <input type="text" placeholder="ARG-2024-XK9..." value={folio} onChange={e => setFolio(e.target.value)} 
+            onKeyDown={e => e.key === "Enter" && handleScan()} />
             <button className="btn btn-primary" onClick={() => handleScan()} disabled={estado === "loading"} style={{ flexShrink: 0 }}>
               {estado === "loading" ? "⏳..." : "🔍 Validar"}
             </button>
           </div>
-        </div>
-
-        <div style={{ background: C.infoBg, border: `1px solid ${C.info}30`, borderRadius: 8, padding: 12, marginBottom: 4, fontSize: 12 }}>
-          <div style={{ fontWeight: 600, color: C.info, marginBottom: 6 }}>💡 ¿Qué folio ingresar? Prueba con estos ejemplos:</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {FOLIOS_EJEMPLO.map((d) => (
-              <button
-                key={d.folio}
-                className="btn btn-sec btn-sm"
-                style={{ fontFamily: "monospace", fontSize: 12, borderColor: d.habilitado ? C.success : C.danger, color: d.habilitado ? C.success : C.danger }}
-                onClick={() => usarEjemplo(d.folio)}
-              >
-                {d.habilitado ? "✅" : "❌"} {d.folio}
-              </button>
-            ))}
-          </div>
-          <div style={{ color: C.textSec, marginTop: 6 }}>
-            Cualquier otro folio también funciona: el resultado será siempre el mismo para ese mismo folio (no cambia entre pruebas).
+          <div style={{ fontSize: 11, color: C.textMuted, marginTop: 6 }}>
+            Ejemplo: <strong style={{ fontFamily: "monospace" }}>ARG-2024-XK9</strong>
           </div>
         </div>
 
-        {estado === "loading" && <div className="pulse" style={{ color: C.textSec, fontSize: 13, marginTop: 8 }}>🔗 Consultando Aduana Argentina (Horcones)...</div>}
+        {estado === "loading" && <div className="pulse" style={{ color: C.textSec, 
+          fontSize: 13, marginTop: 8 }}>🔗 Consultando Aduana Argentina (Horcones)...</div>}
 
         {estado?.ok && (
           <div className="fade" style={{ marginTop: 14 }}>

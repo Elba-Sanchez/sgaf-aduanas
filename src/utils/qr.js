@@ -1,11 +1,5 @@
-// qr.js — Generación de códigos QR de verificación para documentos SGAF
 import QRCode from "qrcode";
 
-/**
- * Codifica los datos esenciales de un documento en un string compacto
- * que luego puede ser leído por el escáner del funcionario/PDI.
- * Formato: SGAF|<tipo>|<folio>|<campo1>|<campo2>...
- */
 export function codificarQrVehiculo(form, folio) {
   return [
     "SGAF", "VEH", folio,
@@ -31,10 +25,6 @@ export function codificarQrMenor(estado, form) {
   ].join("|");
 }
 
-/**
- * Decodifica un string de QR generado por las funciones anteriores.
- * Devuelve null si el formato no corresponde a un documento SGAF válido.
- */
 export function decodificarQr(texto) {
   if (!texto || typeof texto !== "string") return null;
   const partes = texto.split("|");
@@ -69,10 +59,6 @@ export function decodificarQr(texto) {
   return null;
 }
 
-/**
- * Genera un QR como Data URL (PNG en base64) listo para insertar en un <img>
- * o en un PDF vía doc.addImage().
- */
 export async function generarQrDataUrl(texto) {
   return QRCode.toDataURL(texto, {
     margin: 1,

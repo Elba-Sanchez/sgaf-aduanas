@@ -4,15 +4,6 @@ import { mockApi } from "../../services/mockApi.js";
 import { decodificarQr } from "../../utils/qr.js";
 import { TiempoRespuesta } from "../../components/common/TiempoRespuesta.jsx";
 
-// LectorControl — Interfaz de hardware para casetas de control físico (RNF 3.1.2)
-//
-// Los lectores ópticos de código de barras/QR usados en casetas (USB o
-// Bluetooth) operan en modo "keyboard wedge": el lector no necesita drivers,
-// simplemente "escribe" el contenido leído en el campo que esté enfocado y
-// termina con un Enter. Por eso la estrategia aquí es mantener un input
-// siempre enfocado — cualquier lector conectado a la caseta funciona sin
-// configuración adicional. Se incluye también lectura por cámara como
-// respaldo para casetas que aún no cuentan con lector físico instalado.
 
 export function LectorControl({ onToast }) {
   const [valor, setValor] = useState("");
@@ -25,8 +16,6 @@ export function LectorControl({ onToast }) {
   const streamRef = useRef(null);
   const rafRef = useRef(null);
 
-  // Mantiene el input enfocado para que el lector físico (modo teclado)
-  // siempre pueda "escribir" en él, sin que el operador tenga que hacer clic.
   useEffect(() => {
     const refocus = () => inputRef.current?.focus();
     refocus();
@@ -67,8 +56,6 @@ export function LectorControl({ onToast }) {
       return;
     }
 
-    // No es un QR de SGAF: se asume cédula/pasaporte (código de barras o
-    // banda del documento) y se consulta directamente en el módulo PDI.
     try {
       const res = await mockApi.consultarPDI(codigo);
       setResultado({ origen: "PDI", ...res, codigo });
@@ -89,7 +76,6 @@ export function LectorControl({ onToast }) {
     if (e.key === "Enter") procesarCodigo(valor);
   };
 
-  // --- Respaldo por cámara (para casetas sin lector físico aún instalado) ---
   const iniciarCamara = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });

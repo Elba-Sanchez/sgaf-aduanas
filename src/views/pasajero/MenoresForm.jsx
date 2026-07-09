@@ -17,10 +17,6 @@ export function MenoresForm({ user, setSolicitudes, onToast }) {
     setTimeout(() => f("archivoOk", true), 1800);
   };
 
-  // Registra la autorización en la cola compartida que revisan funcionario/admin.
-  // Si el sistema la aprobó automáticamente, igual queda registrada (con estado
-  // "Aprobado") para que quede visible en el historial y se pueda descargar
-  // el mismo documento desde el panel de funcionario/admin.
   const registrarSolicitud = (res) => {
     if (!setSolicitudes) return;
     setSolicitudes(prev => [

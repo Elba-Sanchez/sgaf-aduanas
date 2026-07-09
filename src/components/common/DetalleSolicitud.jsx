@@ -11,9 +11,6 @@ const Campo = ({ label, value }) => (
   <div><strong>{label}:</strong> {value || "—"}</div>
 );
 
-// Muestra el contenido real de la solicitud (lo que el pasajero declaró/subió)
-// para que funcionario/admin puedan revisarlo antes de aprobar o rechazar, y
-// permite descargar el mismo documento con QR que recibe el pasajero.
 export function DetalleSolicitud({ solicitud, onToast }) {
   const { tipo, detalle = {}, estado, motivoRechazo } = solicitud;
 
