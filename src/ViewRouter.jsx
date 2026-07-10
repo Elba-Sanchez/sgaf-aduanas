@@ -34,8 +34,8 @@ export function ViewRouter({ view, user, onNav, onToast, appState }) {
   switch (view) {
     case "pasajero": return <PasajeroHome user={user} onNav={onNav} />;
     case "sag": return <SagForm user={user} onToast={onToast} />;
-    case "menores": return <MenoresForm onToast={onToast} />;
-    case "vehiculo_salida": return <VehiculoSalida onToast={onToast} />;
+    case "menores": return <MenoresForm user={user} setSolicitudes={setSolicitudes} onToast={onToast} />;
+    case "vehiculo_salida": return <VehiculoSalida user={user} setSolicitudes={setSolicitudes} onToast={onToast} />;
 
     case "funcionario": return <FuncionarioPanel user={user} onNav={onNav} solicitudes={solicitudes} setSolicitudes={setSolicitudes} onToast={onToast} />;
     case "vehiculo_ingreso": return <VehiculoIngreso onToast={onToast} />;

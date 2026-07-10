@@ -46,7 +46,7 @@ export function MenoresForm({ user, setSolicitudes, onToast }) {
     if (!form.archivoOk) { onToast("Debes subir la autorización notarial.", "error"); return; }
     setEstado("loading");
     try {
-      const res = await mockApi.validarMenor(form.rutMenor);
+      const res = await mockApi.validarMenor(form, user);
       setEstado(res);
       registrarSolicitud(res);
       onToast(res.aprobado ? "Autorización validada correctamente." : "Autorización requiere revisión manual. Se creó una solicitud para el funcionario.", res.aprobado ? "success" : "warning");

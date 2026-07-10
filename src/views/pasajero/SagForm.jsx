@@ -39,7 +39,7 @@ export function SagForm({ user, setSolicitudes, onToast }) {
   const handleEnviar = async () => {
     setEstado("loading");
     try {
-      const res = await mockApi.validarSag(user?.doc);
+      const res = await mockApi.validarSag(user?.doc, form);
       setEstado(res);
       registrarSolicitud(res);
       onToast(res.aprobado ? "Declaración aceptada." : "Requiere revisión presencial. Se creó una solicitud para el funcionario.", res.aprobado ? "success" : "warning");

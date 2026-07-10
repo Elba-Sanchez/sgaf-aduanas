@@ -1,10 +1,55 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { C } from "../../theme.js";
 
 export function AuditoriaView({ logs }) {
   const [search, setSearch] = useState("");
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const filtered = logs.filter(log => {
+  const fetchLogs = async () => {
+    const token = sessionStorage.getItem("token");
+    const userId = sessionStorage.getItem("userId");
+    const userRol = sessionStorage.getItem("userRol");
+
+    if (token) {
+      setLoading(true);
+      try {
+        const desde = new Date();
+        desde.setDate(desde.getDate() - 30);
+        const desdeStr = desde.toISOString();
+
+        const response = await fetch(`/api/auditoria/eventos?desde=${encodeURIComponent(desdeStr)}&size=100`, {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "X-User-Id": userId,
+            "X-User-Rol": userRol,
+          }
+        });
+        if (response.ok) {
+          const res = await response.json();
+          const mapped = res.data.eventos.map((evt, idx) => ({
+            id: idx + 1,
+            timestamp: new Date(evt.timestamp).toLocaleString("es-CL"),
+            usuario: `${evt.usuario_rol} (${evt.usuario_id || "sistema"})`,
+            accion: `${evt.accion} en ${evt.entidad}: ${evt.detalle || ""}`,
+          }));
+          setList(mapped);
+          return;
+        }
+      } catch (err) {
+        console.warn("Error cargando eventos de auditoría del backend, usando fallback local...", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    setList(logs);
+  };
+
+  useEffect(() => {
+    fetchLogs();
+  }, [logs]);
+
+  const filtered = list.filter(log => {
     if (!search.trim()) return true;
     const term = search.toLowerCase();
     return (
@@ -65,7 +110,7 @@ export function AuditoriaView({ logs }) {
         </table>
 
         <div style={{ marginTop: 12, fontSize: 13, color: C.textMuted }}>
-          Mostrando {filtered.length} de {logs.length} registros
+          Mostrando {filtered.length} de {list.length} registros
         </div>
       </div>
     </div>

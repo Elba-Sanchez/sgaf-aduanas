@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { C } from "../../theme.js";
 
 const ROLES_DISPONIBLES = ["Administrador", "Funcionario", "Funcionario PDI"];
@@ -8,8 +8,52 @@ export function GestionUsuarios({ usuarios, setUsuarios, onToast }) {
   const [editando, setEditando] = useState(null); // null = no se edita, objeto con datos del usuario o nuevo
   const [form, setForm] = useState({ nombre: "", run: "", rol: "", aduana: "", correo: "" });
   const [modo, setModo] = useState("crear"); // "crear" o "editar"
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const filtered = usuarios.filter(u => {
+  const fetchUsuarios = async () => {
+    const token = sessionStorage.getItem("token");
+    const userId = sessionStorage.getItem("userId");
+    const userRol = sessionStorage.getItem("userRol");
+
+    if (token) {
+      setLoading(true);
+      try {
+        const response = await fetch("/api/usuarios", {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "X-User-Id": userId,
+            "X-User-Rol": userRol,
+          }
+        });
+        if (response.ok) {
+          const res = await response.json();
+          const mapped = res.data.map(u => ({
+            id: u.id,
+            nombre: u.nombre,
+            run: u.run,
+            rol: u.rol === "ADMINISTRADOR" ? "Administrador" : u.rol === "FUNCIONARIO" ? "Funcionario" : u.rol === "PDI" ? "Funcionario PDI" : "Pasajero",
+            aduana: u.aduana === "LOS_LIBERTADORES" ? "Los Libertadores" : u.aduana === "PINO_HACHADO" ? "Pino Hachado" : u.aduana === "CARDENAL_SAMORE" ? "Cardenal Samoré" : (u.aduana || "—"),
+            correo: u.correo,
+            activo: u.activo
+          }));
+          setList(mapped);
+          return;
+        }
+      } catch (err) {
+        console.warn("Error cargando usuarios del backend, usando fallback local...", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    setList(usuarios);
+  };
+
+  useEffect(() => {
+    fetchUsuarios();
+  }, [usuarios]);
+
+  const filtered = list.filter(u => {
     if (!search.trim()) return true;
     const term = search.toLowerCase();
     return (
@@ -39,12 +83,89 @@ export function GestionUsuarios({ usuarios, setUsuarios, onToast }) {
     setForm({ nombre: "", run: "", rol: "", aduana: "", correo: "" });
   };
 
-  const guardarUsuario = () => {
+  const guardarUsuario = async () => {
     if (!form.nombre.trim() || !form.run.trim() || !form.rol || !form.aduana.trim() || !form.correo.trim()) {
       onToast("Completa todos los campos obligatorios.", "error");
       return;
     }
 
+    const token = sessionStorage.getItem("token");
+    const userId = sessionStorage.getItem("userId");
+    const userRol = sessionStorage.getItem("userRol");
+
+    const rolEnum = form.rol === "Administrador" ? "ADMINISTRADOR" : form.rol === "Funcionario" ? "FUNCIONARIO" : "PDI";
+    const aduanaEnum = form.aduana.toLowerCase().includes("libertadores") ? "LOS_LIBERTADORES" : form.aduana.toLowerCase().includes("hachado") ? "PINO_HACHADO" : "CARDENAL_SAMORE";
+
+    if (token) {
+      setLoading(true);
+      try {
+        if (modo === "crear") {
+          const payload = {
+            run: form.run.trim(),
+            nombre: form.nombre.trim(),
+            correo: form.correo.trim(),
+            password: "password123", // Clave por defecto
+            rol: rolEnum,
+            aduana: aduanaEnum
+          };
+
+          const response = await fetch("/api/usuarios", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+              "X-User-Id": userId,
+              "X-User-Rol": userRol,
+            },
+            body: JSON.stringify(payload)
+          });
+
+          if (!response.ok) {
+            const errRes = await response.json().catch(() => ({}));
+            throw new Error(errRes.error?.message || "Error al crear el usuario.");
+          }
+
+          onToast(`Usuario ${form.nombre} creado exitosamente.`, "success");
+        } else {
+          const payload = {
+            run: form.run.trim(),
+            nombre: form.nombre.trim(),
+            correo: form.correo.trim(),
+            rol: rolEnum,
+            aduana: aduanaEnum,
+            activo: editando.activo !== false
+          };
+
+          const response = await fetch(`/api/usuarios/${editando.id}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+              "X-User-Id": userId,
+              "X-User-Rol": userRol,
+            },
+            body: JSON.stringify(payload)
+          });
+
+          if (!response.ok) {
+            const errRes = await response.json().catch(() => ({}));
+            throw new Error(errRes.error?.message || "Error al actualizar el usuario.");
+          }
+
+          onToast(`Usuario ${form.nombre} actualizado.`, "success");
+        }
+        fetchUsuarios();
+        cancelar();
+        return;
+      } catch (err) {
+        onToast(err.message, "error");
+        return;
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // Fallback local
     if (modo === "crear") {
       const nuevoId = Math.max(...usuarios.map(u => u.id), 0) + 1;
       const nuevo = {
@@ -70,11 +191,41 @@ export function GestionUsuarios({ usuarios, setUsuarios, onToast }) {
     cancelar();
   };
 
-  const eliminarUsuario = (user) => {
-    if (window.confirm(`¿Eliminar al usuario ${user.nombre} (${user.run})?`)) {
-      setUsuarios(prev => prev.filter(u => u.id !== user.id));
-      onToast(`Usuario ${user.nombre} eliminado.`, "info");
+  const eliminarUsuario = async (user) => {
+    if (!window.confirm(`¿Eliminar al usuario ${user.nombre} (${user.run})?`)) return;
+
+    const token = sessionStorage.getItem("token");
+    const userId = sessionStorage.getItem("userId");
+    const userRol = sessionStorage.getItem("userRol");
+
+    if (token) {
+      try {
+        const response = await fetch(`/api/usuarios/${user.id}`, {
+          method: "DELETE",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "X-User-Id": userId,
+            "X-User-Rol": userRol,
+          }
+        });
+
+        if (!response.ok) {
+          const errRes = await response.json().catch(() => ({}));
+          throw new Error(errRes.error?.message || "Error al eliminar el usuario.");
+        }
+
+        onToast(`Usuario ${user.nombre} eliminado.`, "info");
+        fetchUsuarios();
+        return;
+      } catch (err) {
+        onToast(err.message, "error");
+        return;
+      }
     }
+
+    // Fallback local
+    setUsuarios(prev => prev.filter(u => u.id !== user.id));
+    onToast(`Usuario ${user.nombre} eliminado.`, "info");
   };
 
   return (
@@ -139,7 +290,7 @@ export function GestionUsuarios({ usuarios, setUsuarios, onToast }) {
           </tbody>
         </table>
         <div style={{ marginTop: 12, fontSize: 13, color: C.textMuted }}>
-          {filtered.length} de {usuarios.length} usuarios
+          {filtered.length} de {list.length} usuarios
         </div>
       </div>
 

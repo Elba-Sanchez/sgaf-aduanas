@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { C } from "../../theme.js";
 import { generarPdfVehiculoSalida } from "../../utils/pdfGenerator.js";
+import { mockApi } from "../../services/mockApi.js";
 
-export function VehiculoSalida({ onToast }) {
+export function VehiculoSalida({ user, onToast }) {
   const [form, setForm] = useState({ patente: "", marca: "", modelo: "", anio: "", color: "", motor: "", chasis: "", propietario: "", rut: "" });
   const [patenteOk, setPatenteOk] = useState(null);
   const [generado, setGenerado] = useState(false);
   const [folio, setFolio] = useState(null);
+  const [loading, setLoading] = useState(false);
   const f = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
   const validarPatente = (p) => {
@@ -14,11 +16,21 @@ export function VehiculoSalida({ onToast }) {
     setPatenteOk(ok); return ok;
   };
 
-  const handleGenerar = () => {
+  const handleGenerar = async () => {
     if (!validarPatente(form.patente)) { onToast("Formato de patente inválido (ej: AB1234)", "error"); return; }
     if (!form.marca || !form.modelo || !form.propietario) { onToast("Completa todos los campos obligatorios.", "error"); return; }
-    setFolio(Math.floor(100000 + Math.random() * 900000));
-    setGenerado(true); onToast("Documento generado exitosamente.", "success");
+
+    setLoading(true);
+    try {
+      const res = await mockApi.validarVehiculoSalida(form, user);
+      setFolio(res.folio);
+      setGenerado(true);
+      onToast("Trámite de salida registrado exitosamente.", "success");
+    } catch (e) {
+      onToast(e.message || "Error al registrar el trámite.", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDescargar = async () => {
@@ -97,7 +109,9 @@ export function VehiculoSalida({ onToast }) {
             </div>
           ))}
         </div>
-        <button className="btn btn-primary" onClick={handleGenerar}>📄 Generar documento PDF</button>
+        <button className="btn btn-primary" onClick={handleGenerar} disabled={loading}>
+          {loading ? "⏳ Procesando..." : "📄 Generar documento PDF"}
+        </button>
       </div>
     </div>
   );

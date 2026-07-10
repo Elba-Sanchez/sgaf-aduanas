@@ -8,18 +8,56 @@ export function LoginView({ onLogin }) {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setErr("");
     setLoading(true);
-    setTimeout(() => {
-      const u = USERS_LOGIN[doc.toLowerCase()];
-      if (u && u.pass === pass) {
-        onLogin({ role: u.role, name: u.name, doc });
-      } else {
-        setErr("RUT/pasaporte o contraseña incorrectos.");
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ run: doc, password: pass }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || result.error) {
+        throw new Error(result.error?.message || "RUT/pasaporte o contraseña incorrectos.");
       }
+
+      const { access_token, user } = result.data;
+
+      // Guardamos el token y las cabeceras de autorización requeridas por los microservicios
+      sessionStorage.setItem("token", access_token);
+      sessionStorage.setItem("userId", user.id);
+      sessionStorage.setItem("userRol", user.rol);
+
+      const roleMap = {
+        PASAJERO: "pasajero",
+        FUNCIONARIO: "funcionario",
+        ADMINISTRADOR: "admin",
+        PDI: "pdi"
+      };
+
+      onLogin({
+        role: roleMap[user.rol] || user.rol.toLowerCase(),
+        name: user.nombre,
+        doc: user.run
+      });
+    } catch (error) {
+      // Fallback local en caso de que no haya conexión con el backend (ej: fuera de docker o red inalcanzable)
+      if (error.message.includes("Failed to fetch") || error.message.includes("fetch") || error.message.includes("NetworkError")) {
+        console.warn("Backend no disponible. Usando fallback de login local para desarrollo...");
+        const u = USERS_LOGIN[doc.toLowerCase()];
+        if (u && u.pass === pass) {
+          onLogin({ role: u.role, name: u.name, doc });
+          setLoading(false);
+          return;
+        }
+      }
+      setErr(error.message === "Failed to fetch" ? "No se pudo conectar con el servidor." : error.message);
+    } finally {
       setLoading(false);
-    }, 900);
+    }
   };
 
   return (
